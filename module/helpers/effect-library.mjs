@@ -56,6 +56,7 @@ export async function copyLibraryEffect(document, uuid) {
   const data = effect.toObject();
   delete data._id;
   data.transfer = false;
+  data.flags = { ...(data.flags ?? {}), [FLAGS.scope]: { ...(data.flags?.[FLAGS.scope] ?? {}), [FLAGS.librarySource]: uuid } };
   const [created] = await document.createEmbeddedDocuments("ActiveEffect", [data]);
   return created ?? null;
 }

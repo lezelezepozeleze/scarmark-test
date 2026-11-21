@@ -4,7 +4,7 @@ import { test } from "node:test";
 import assert from "node:assert";
 import { createRenderer } from "./support/render.mjs";
 import { prepareActionsPanel, ACTIONS_PANEL_TEMPLATE } from "../module/sheets/actions/action-panel.mjs";
-import { actionsFor, isTestAction, ownedEffectChanges } from "../module/rules/index.mjs";
+import { actionsFor, isTestAction, parseActionTest, ownedEffectChanges } from "../module/rules/index.mjs";
 
 const { render } = createRenderer();
 const effects = [{ id: "e1", name: "Bless" }, { id: "e2", name: "Curse <x>" }];
@@ -17,8 +17,9 @@ test("prepareActionsPanel: one row per action, roll-downs named by the data path
   const panel = prepareActionsPanel(document);
   assert.strictEqual(panel.path, "system.actions");
   assert.deepStrictEqual(panel.rows.map(row => row.effect.name), ["system.actions.0.effect", "system.actions.1.effect"]);
-  assert.deepStrictEqual(panel.rows[0].effect.options.map(o => [o.value, o.label, o.selected]), [["", "", false], ["e1", "Bless", false], ["e2", "Curse <x>", true]]);
-  assert.deepStrictEqual(panel.rows[1].effect.options.map(o => o.selected), [true, false, false]);
+  assert.deepStrictEqual(panel.rows[0].effect.groups.map(g => g.options.map(o => [o.value, o.label, o.selected])), [[["e1", "Bless", false], ["e2", "Curse <x>", true]]]);
+  assert.deepStrictEqual([panel.rows[0].effect.blankSelected, panel.rows[1].effect.blankSelected], [false, true]);
+  assert.deepStrictEqual(panel.rows[1].effect.groups[0].options.map(o => o.selected), [false, false]);
 });
 
 test("prepareActionsPanel: the when roll-down follows the Usable and Consumable flags; a stored trigger stays", () => {
@@ -44,10 +45,12 @@ test("prepareActionsPanel: the do roll-down defaults to add effect; a test actio
   const effectRow = panelOf({ effect: "e1" }, {}, { effects });
   assert.strictEqual(effectRow.isTest, false);
   assert.deepStrictEqual(effectRow.kind.options.map(o => [o.value, o.selected]), [["effect", true], ["test", false]]);
-  const testRow = panelOf({ kind: "test", test: "vitality", when: "consumed" }, { consumable: true }, { effects });
+  const tests = [{ label: "Attributes", options: [{ value: "attribute:str", label: "Strength" }] }, { label: "Skills", options: [{ value: "skill:Vitality", label: "Vitality" }] }];
+  const testRow = prepareActionsPanel({ effects, _source: { system: { consumable: true, actions: [action({ kind: "test", test: "skill:Vitality", when: "consumed" })] } } }, "system.actions", { tests }).rows[0];
   assert.strictEqual(testRow.isTest, true);
   assert.deepStrictEqual(testRow.kind.options.map(o => [o.value, o.selected]), [["effect", false], ["test", true]]);
-  assert.deepStrictEqual(testRow.test.options.map(o => [o.value, o.selected]), [["", false], ["vitality", true]]);
+  assert.deepStrictEqual(testRow.test.groups.map(g => [g.label, g.options.map(o => [o.value, o.selected])]), [["Attributes", [["attribute:str", false]]], ["Skills", [["skill:Vitality", true]]]]);
+  assert.strictEqual(testRow.test.blankSelected, false);
 });
 
 test("prepareActionsPanel: the item roll-down shows for target item and lists the items of the owning actor", () => {
@@ -64,7 +67,7 @@ test("prepareActionsPanel: works at any path of any document (here a flag, no ef
   const panel = prepareActionsPanel({ _source: { flags: { mod: { acts: [action({ id: "x" })] } } } }, "flags.mod.acts");
   assert.strictEqual(panel.path, "flags.mod.acts");
   assert.strictEqual(panel.rows[0].when.name, "flags.mod.acts.0.when");
-  assert.deepStrictEqual(values(panel.rows[0].effect), [""]);
+  assert.deepStrictEqual(panel.rows[0].effect.groups, []);
 });
 
 test("actions-panel partial: when / add / on, hidden id, escaped effect names, delete and add links, the empty line", () => {
@@ -87,6 +90,24 @@ test("actions-panel partial: no on roll-down for consumed, the item roll-down fo
   const item = render(ACTIONS_PANEL_TEMPLATE, { panel: prepareActionsPanel({ parent: owner, _source: { system: { actions: [action({ when: "used", on: "item", targetItem: "i1" })] } } }) });
   assert.ok(item.includes('name="system.actions.0.targetItem"'));
   assert.ok(item.includes('<option value="i1" selected>Razor &lt;b&gt;</option>'));
+});
+
+test("prepareActionsPanel: the effect roll-down also offers the effect library, the stored library uuid selected", () => {
+  const library = [{ label: "Effects", entries: [{ uuid: "Compendium.scarmark-test.effects.ActiveEffect.shaved", name: "Freshly shaved" }] }];
+  const row = prepareActionsPanel({ effects, _source: { system: { actions: [action({ effect: "Compendium.scarmark-test.effects.ActiveEffect.shaved" })] } } }, "system.actions", { library }).rows[0];
+  assert.deepStrictEqual(row.effect.groups.map(g => [g.label, g.options.map(o => [o.label, o.selected])]), [["SCARMARK.Action.thisItem", [["Bless", false], ["Curse <x>", false]]], ["Effects", [["Freshly shaved", true]]]]);
+  assert.strictEqual(row.effect.blankSelected, false);
+  const html = render(ACTIONS_PANEL_TEMPLATE, { panel: { path: "system.actions", rows: [row] } });
+  assert.ok(html.includes('<optgroup label="Effects">') && html.includes('<optgroup label="SCARMARK.Action.thisItem">'));
+  assert.ok(html.includes('<option value="Compendium.scarmark-test.effects.ActiveEffect.shaved" selected>Freshly shaved</option>'));
+});
+
+test("parseActionTest: skill and attribute tests, an older bare skill name, no test", () => {
+  assert.deepStrictEqual(parseActionTest("skill:Close Combat"), { type: "skill", name: "Close Combat" });
+  assert.deepStrictEqual(parseActionTest("attribute:str"), { type: "attribute", name: "str" });
+  assert.deepStrictEqual(parseActionTest("vitality"), { type: "skill", name: "vitality" });
+  assert.strictEqual(parseActionTest(""), null);
+  assert.strictEqual(parseActionTest(undefined), null);
 });
 
 test("actions-panel partial: a test action shows the test roll-down and no effect or on roll-down", () => {

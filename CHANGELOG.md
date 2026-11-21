@@ -2,6 +2,11 @@
 
 All notable changes to the Scarmark system.
 
+## 1.1.4-beta - 2026-11-21
+
+- The Effects tab of an item with an Actions tab is just a list: its Add link is gone. Effects get onto the item through its actions: the effect roll-down of an action now offers every effect of the effect library (grouped by compendium) after the item's own effects. Picking a library effect copies it onto the item (once per library effect, not transferring) and points the action at the copy, so the Effects tab always lists everything the actions use. Sheets with no Actions tab (the trait) keep their Add.
+- The test roll-down of a "roll test" action offers every attribute and every skill of the Skills compendium. A skill test is a d100 against the ESL of the character's skill of that name; an attribute test is against the effective attribute times the test multiplier (5). The old fixed table of tests (Vitality only) is gone; a Vitality action saved earlier keeps working (read as the skill of that name).
+
 ## 1.1.3-beta - 2026-11-21
 
 - Item model: an item's Effects tab is the list of what the item can do, and its Actions tab says when each effect happens. An action now reads "when <trigger> add <effect> [on <target>]". The effect roll-down lists only the item's own effects (use the Add menu of the Effects tab to bring one in from the effect library); the stored value is the effect id.

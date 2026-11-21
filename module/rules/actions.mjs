@@ -30,3 +30,18 @@ export function ownedEffectChanges(effects, actions) {
   }
   return changes;
 }
+
+/**
+ * Read the value of an action's test roll-down: "skill:<name>" (a d100 against that skill's ESL), "attribute:<key>" (against the attribute times the test multiplier), or an older bare skill name. Null for no test.
+ *
+ * @param {string|undefined} value
+ * @returns {{type: "skill"|"attribute", name: string}|null}
+ */
+export function parseActionTest(value) {
+  const text = String(value ?? "");
+  if (!text) return null;
+  const colon = text.indexOf(":");
+  const type = text.slice(0, colon);
+  if (colon > 0 && (type === "skill" || type === "attribute")) return { type, name: text.slice(colon + 1) };
+  return { type: "skill", name: text };
+}

@@ -1,9 +1,9 @@
 /** Running the actions of an item: "when <trigger> add <effect> on <target>" or "when <trigger> roll <test>". Using a usable item sets off its "used" actions, opening the sheet of an item the character carries its "inspected" ones, consuming a consumable its "consumed" ones (helpers/consume.mjs). */
-import { ACTION_TARGET_SELECTED_TOKEN, ACTION_TARGET_SELF, ACTION_TARGET_ITEM, ACTION_TRIGGER_USED, ACTION_TRIGGER_INSPECTED, ACTION_TRIGGERS, ACTION_TESTS } from "../config/index.mjs";
+import { ACTION_TARGET_SELECTED_TOKEN, ACTION_TARGET_SELF, ACTION_TARGET_ITEM, ACTION_TRIGGER_USED, ACTION_TRIGGER_INSPECTED, ACTION_TRIGGERS, ATTRIBUTES, ATTRIBUTE_TEST_MULTIPLIER } from "../config/index.mjs";
 import { FLAGS } from "../constants.mjs";
-import { actionsFor, isTestAction, ownedEffectChanges, capTarget } from "../rules/index.mjs";
+import { actionsFor, isTestAction, parseActionTest, ownedEffectChanges, capTarget } from "../rules/index.mjs";
 import { esc } from "./escape.mjs";
-import { stampEffectData, currentWorldTime } from "./effect-library.mjs";
+import { stampEffectData, currentWorldTime, copyLibraryEffect } from "./effect-library.mjs";
 import { rollD100Test } from "./dice/shared.mjs";
 
 /** The actor that carries the item (null for a loose item). */
@@ -81,7 +81,7 @@ export async function applyPlan(plan) {
   return applied;
 }
 
-/** Roll the test actions of `item` that fire on `trigger`: d100 against the ESL of the test's skill of the carrying character, right now. The roll posts its own card. Returns how many tests were rolled. */
+/** Roll the test actions of `item` that fire on `trigger`: a d100 against the ESL of the test's skill of the carrying character (found by name), or against its effective attribute times the test multiplier, right now. The roll posts its own card. Returns how many tests were rolled. */
 export async function rollTests(item, trigger) {
   let rolled = 0;
   for (const action of actionsFor(item.system.actions, trigger).filter(isTestAction)) {
@@ -90,13 +90,23 @@ export async function rollTests(item, trigger) {
       ui.notifications.warn(game.i18n.localize("SCARMARK.Action.noOwner"));
       continue;
     }
-    const wanted = ACTION_TESTS[action.test]?.skill;
-    const skill = wanted && actor.items.find(i => i.type === "skill" && i.name.toLowerCase() === wanted.toLowerCase());
-    if (!skill) {
-      ui.notifications.warn(game.i18n.format("SCARMARK.Action.noSkill", { actor: actor.name, skill: wanted ?? action.test }));
-      continue;
+    const test = parseActionTest(action.test);
+    if (test.type === "attribute") {
+      const attribute = actor.system.attributes?.[test.name];
+      if (!attribute) {
+        ui.notifications.warn(game.i18n.format("SCARMARK.Action.noAttribute", { actor: actor.name, attribute: test.name }));
+        continue;
+      }
+      const label = game.i18n.localize(ATTRIBUTES[test.name]?.label ?? test.name);
+      await rollD100Test(actor, `${esc(label)} ${game.i18n.localize("SCARMARK.Test")}`, capTarget(attribute.effective * ATTRIBUTE_TEST_MULTIPLIER));
+    } else {
+      const skill = actor.items.find(i => i.type === "skill" && i.name.toLowerCase() === test.name.toLowerCase());
+      if (!skill) {
+        ui.notifications.warn(game.i18n.format("SCARMARK.Action.noSkill", { actor: actor.name, skill: test.name }));
+        continue;
+      }
+      await rollD100Test(actor, `${esc(skill.name)} ${game.i18n.localize("SCARMARK.Test")}`, capTarget(skill.system.esl));
     }
-    await rollD100Test(actor, `${esc(skill.name)} ${game.i18n.localize("SCARMARK.Test")}`, capTarget(skill.system.esl));
     rolled++;
   }
   return rolled;
@@ -142,4 +152,25 @@ export async function syncOwnedEffects(item) {
   const updates = ownedEffectChanges(effects, item.system.actions).map(change => ({ _id: change.id, transfer: change.transfer, [scope]: change.managed }));
   if (updates.length) await item.updateEmbeddedDocuments("ActiveEffect", updates);
   return updates.length;
+}
+
+/**
+ * An action can pick an effect of the effect library (a compendium uuid). The item keeps its own copy, so its Effects tab lists everything its actions use: the copy is made (once per library effect, marked with where it came from) and the action is pointed at it. Called when the actions of an item change (foundry/item-hooks.mjs). Returns how many actions were pointed at a copy.
+ */
+export async function materializeActionEffects(item) {
+  const actions = (item.system.actions ?? []).map(action => ({ ...action }));
+  let changed = 0;
+  for (const action of actions) {
+    if (isTestAction(action) || !String(action.effect ?? "").startsWith("Compendium.")) continue;
+    const source = action.effect;
+    const copy = item.effects.find(effect => effect.getFlag(FLAGS.scope, FLAGS.librarySource) === source) ?? await copyLibraryEffect(item, source);
+    if (!copy) {
+      ui.notifications.warn(game.i18n.format("SCARMARK.Action.effectMissing", { item: item.name }));
+      continue;
+    }
+    action.effect = copy.id;
+    changed++;
+  }
+  if (changed) await item.update({ "system.actions": actions });
+  return changed;
 }

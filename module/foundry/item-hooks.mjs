@@ -1,5 +1,5 @@
-/** Hooks on items: an "owned" action makes its effect transfer to the owner (helpers/item-actions.mjs syncOwnedEffects). */
-import { syncOwnedEffects } from "../helpers/item-actions.mjs";
+/** Hooks on items: a library effect that an action picks is copied onto the item, and an "owned" action makes its effect transfer to the owner (helpers/item-actions.mjs). */
+import { materializeActionEffects, syncOwnedEffects } from "../helpers/item-actions.mjs";
 
 /** Register the item hooks (called when the module loads). */
 export function registerItemHooks() {
@@ -7,6 +7,6 @@ export function registerItemHooks() {
   Hooks.on("updateItem", (item, changes, options, userId) => {
     if (userId !== game.user.id) return;
     if (!foundry.utils.hasProperty(changes, "system.actions")) return;
-    syncOwnedEffects(item).catch(err => console.error("Scarmark | syncing the owned effects failed", err));
+    materializeActionEffects(item).then(() => syncOwnedEffects(item)).catch(err => console.error("Scarmark | syncing the actions of an item failed", err));
   });
 }

@@ -555,7 +555,10 @@
     "Action": {
       "kindEffect": "add effect",
       "kindTest": "roll test",
-      "testVitality": "Vitality",
+      "thisItem": "This item",
+      "testAttributes": "Attributes",
+      "testSkills": "Skills",
+      "noAttribute": "{actor} has no {attribute} attribute to roll the test with.",
       "on": "on",
       "when": "when",
       "none": "None",

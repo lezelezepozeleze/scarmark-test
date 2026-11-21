@@ -18,6 +18,8 @@ export const FLAGS = {
   maneuver: "maneuver",
   /** ActiveEffect on an item: true when an "owned" action made the effect transfer to the owner (helpers/item-actions.mjs syncOwnedEffects). */
   ownedByAction: "ownedByAction",
+  /** ActiveEffect on an item: the uuid of the library effect it was copied from when an action picked it (helpers/item-actions.mjs materializeActionEffects). */
+  librarySource: "librarySource",
   /** Combat: last round for which combat Fatigue and bleeding were applied. */
   lastFatigueRound: "lastFatigueRound",
   /** ActiveEffect: world time at which a consumed item's effect expires (see foundry/effect-expiry.mjs). */

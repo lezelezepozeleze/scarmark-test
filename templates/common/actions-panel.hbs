@@ -18,11 +18,21 @@
       </select>
       {{#if row.isTest}}
       <select class="action-test" name="{{row.test.name}}">
-        {{#each row.test.options}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
+        <option value=""{{#if row.test.blankSelected}} selected{{/if}}></option>
+        {{#each row.test.groups}}
+        <optgroup label="{{label}}">
+          {{#each options}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
+        </optgroup>
+        {{/each}}
       </select>
       {{else}}
       <select class="action-effect" name="{{row.effect.name}}">
-        {{#each row.effect.options}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
+        <option value=""{{#if row.effect.blankSelected}} selected{{/if}}></option>
+        {{#each row.effect.groups}}
+        <optgroup label="{{label}}">
+          {{#each options}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
+        </optgroup>
+        {{/each}}
       </select>
       {{/if}}
       {{#if row.showOn}}

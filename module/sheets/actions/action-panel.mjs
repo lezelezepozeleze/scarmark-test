@@ -3,11 +3,13 @@
  *   1. give the data model the field: `actions: actionsField()` (data/shared-fields.mjs), or any other path;
  *   2. wrap the sheet class: `class MySheet extends ActionsPanelMixin(HandlebarsApplicationMixin(DocumentSheetV2))` (adds the click actions and context.actionsPanel);
  *   3. put `{{> "systems/scarmark-test/templates/common/actions-panel.hbs" panel=actionsPanel}}` in a template (tab, section, dialog) and list ACTIONS_PANEL_TEMPLATE in that part's `templates`.
- * The panel finds its data path from the markup (data-actions-path), so several panels, each with its own path, can live on one sheet (give each its own context key: prepareActionsPanel(document, path)).
- * The "do" roll-down chooses between adding an effect and rolling a test; the next roll-down then lists the effects of the document itself (an item's Effects tab is the list of what it can do; the stored value is the effect id) or the tests of ACTION_TESTS. The "when" and "on" roll-downs come from config/actions.mjs: an option can require a flag of the document (e.g. "Consumed" needs system.consumable), so the lists follow the item's checkboxes, and "on" is only shown for a trigger that asks for a target.
+ * The panel finds its data path from the markup (data-actions-path), so several panels, each with its own path, can live on one sheet (give each its own context key: prepareActionsPanel(document, path, { library, tests })).
+ * The "do" roll-down chooses between adding an effect and rolling a test. The effect roll-down offers the effects of the document itself and every effect of the effect library (the Active Effect compendia); a library effect that an action picks is copied onto the item (helpers/item-actions.mjs materializeActionEffects), so the item's Effects tab lists everything its actions use. The test roll-down offers every attribute and skill (helpers/action-tests.mjs). The "when" and "on" roll-downs come from config/actions.mjs: an option can require a flag of the document (e.g. "Consumed" needs system.consumable), so the lists follow the item's checkboxes, and "on" is only shown for a trigger that asks for a target.
  */
 import { TEMPLATE_DIR } from "../../constants.mjs";
-import { ACTION_TARGETS, ACTION_TRIGGERS, ACTION_TARGET_ITEM, ACTION_KINDS, ACTION_KIND_EFFECT, ACTION_KIND_TEST, ACTION_TESTS } from "../../config/index.mjs";
+import { ACTION_TARGETS, ACTION_TRIGGERS, ACTION_TARGET_ITEM, ACTION_KINDS, ACTION_KIND_EFFECT, ACTION_KIND_TEST } from "../../config/index.mjs";
+import { listEffectLibrary } from "../../helpers/effect-library.mjs";
+import { listActionTests } from "../../helpers/action-tests.mjs";
 
 export const ACTIONS_PANEL_TEMPLATE = `${TEMPLATE_DIR}common/actions-panel.hbs`;
 
@@ -27,22 +29,37 @@ function rollDown(name, value, options) {
   return { name, options: [{ value: "", label: "", selected: !value }, ...options.map(option => ({ ...option, selected: option.value === value }))] };
 }
 
+/** A roll-down whose options come in labelled groups (after the blank option). */
+function groupedRollDown(name, value, groups) {
+  return {
+    name,
+    blankSelected: !value,
+    groups: groups.map(group => ({ label: group.label, options: group.options.map(option => ({ ...option, selected: option.value === value })) }))
+  };
+}
+
 /**
  * The view model of the panel for the actions stored at `path` of `document`: one row per action with its roll-downs, named so the sheet's own form submit saves them (submitOnChange).
  *
  * @param {foundry.abstract.Document} document the item or actor that owns the list
  * @param {string} [path] data path of the list, e.g. "system.actions"
+ * @param {object} [lists]
+ * @param {{label: string, entries: {uuid: string, name: string}[]}[]} [lists.library] the effect library (listEffectLibrary)
+ * @param {{label: string, options: {value: string, label: string}[]}[]} [lists.tests] the test groups (listActionTests)
  * @returns {{path: string, rows: object[]}}
  */
-export function prepareActionsPanel(document, path = DEFAULT_ACTIONS_PATH) {
-  const effectOptions = Array.from(document.effects ?? []).map(effect => ({ value: effect.id, label: effect.name }));
+export function prepareActionsPanel(document, path = DEFAULT_ACTIONS_PATH, { library = [], tests = [] } = {}) {
+  const own = Array.from(document.effects ?? []).map(effect => ({ value: effect.id, label: effect.name }));
+  const effectGroups = [
+    ...(own.length ? [{ label: game.i18n.localize("SCARMARK.Action.thisItem"), options: own }] : []),
+    ...library.map(group => ({ label: group.label, options: group.entries.map(entry => ({ value: entry.uuid, label: entry.name })) }))
+  ];
   const itemOptions = Array.from(inventoryOf(document)).map(item => ({ value: item.id, label: item.name }));
   const data = document._source ?? document;
   const offered = (table, current) => Object.entries(table)
     .filter(([key, option]) => !option.requires || readPath(data, option.requires) || key === current)
     .map(([value, option]) => ({ value, label: game.i18n.localize(option.label) }));
   const kindOptions = Object.entries(ACTION_KINDS).map(([value, kind]) => ({ value, label: game.i18n.localize(kind.label) }));
-  const testOptions = Object.entries(ACTION_TESTS).map(([value, test]) => ({ value, label: game.i18n.localize(test.label) }));
   const rows = storedActions(document, path).map((action, index) => {
     const prefix = `${path}.${index}`;
     const kind = action.kind || ACTION_KIND_EFFECT;
@@ -54,8 +71,8 @@ export function prepareActionsPanel(document, path = DEFAULT_ACTIONS_PATH) {
       when: rollDown(`${prefix}.when`, action.when, offered(ACTION_TRIGGERS, action.when)),
       kind: { name: `${prefix}.kind`, options: kindOptions.map(option => ({ ...option, selected: option.value === kind })) },
       isTest,
-      effect: rollDown(`${prefix}.effect`, action.effect, effectOptions),
-      test: rollDown(`${prefix}.test`, action.test, testOptions),
+      effect: groupedRollDown(`${prefix}.effect`, action.effect, effectGroups),
+      test: groupedRollDown(`${prefix}.test`, action.test, tests),
       showOn,
       on: rollDown(`${prefix}.on`, action.on, offered(ACTION_TARGETS, action.on)),
       showItem: showOn && action.on === ACTION_TARGET_ITEM,
@@ -94,7 +111,7 @@ export const ActionsPanelMixin = (Base) => class extends Base {
   /** @override */
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
-    context.actionsPanel = prepareActionsPanel(this.document);
+    context.actionsPanel = prepareActionsPanel(this.document, DEFAULT_ACTIONS_PATH, { library: await listEffectLibrary(), tests: await listActionTests() });
     return context;
   }
 };

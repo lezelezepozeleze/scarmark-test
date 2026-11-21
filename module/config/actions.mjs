@@ -1,18 +1,11 @@
 /** The roll-downs of the Actions panel (sheets/actions/action-panel.mjs) and the keys the action runner (helpers/item-actions.mjs) acts on. Pure data.
  * Each option is { label, requires }: the lang key, and the data path of a flag of the document that must be ticked for the option to be offered (null = always). An option a saved action already uses stays in its roll-down even when the flag is later unticked, so nothing is silently lost. */
-import { TOXICITY_SKILL } from "./items.mjs";
-
 /** "do": what an action does. An action without one is an "add effect" action (the first actions had no kind). */
 export const ACTION_KIND_EFFECT = "effect";
 export const ACTION_KIND_TEST = "test";
 export const ACTION_KINDS = {
   [ACTION_KIND_EFFECT]: { label: "SCARMARK.Action.kindEffect" },
   [ACTION_KIND_TEST]: { label: "SCARMARK.Action.kindTest" }
-};
-
-/** The tests an action can roll: stored key -> { label, skill }. The test is a d100 roll against the ESL of that skill of the character, at the moment of the roll (so a toxicity penalty applied just before counts). */
-export const ACTION_TESTS = {
-  vitality: { label: "SCARMARK.Action.testVitality", skill: TOXICITY_SKILL }
 };
 
 /** "on": what an action's effect goes onto: the actor that carries the item, the selected tokens, or one item of that actor (a second roll-down then picks it). */

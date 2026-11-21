@@ -1,4 +1,4 @@
-{{!-- The effects of an item: header with the Add link and the list. Parameter: heading - lang key of an optional title above the table. --}}
+{{!-- The effects of an item: header with the Add link and the list. Parameters: heading - lang key of an optional title above the table; hideAdd - leave out the Add link (the Effects tab of a sheet with an Actions tab is just a list). --}}
 <div class="effects-flat">
   {{#if heading}}
   <h3>{{localize heading}}</h3>
@@ -7,9 +7,11 @@
     <span class="col-name">{{localize 'SCARMARK.Effect.effect'}}</span>
     <span class="col-duration">{{localize 'SCARMARK.Effect.duration'}}</span>
     <span class="col-changes">{{localize 'SCARMARK.Effect.changes'}}</span>
+    {{#unless hideAdd}}
     <a class="add-effect" data-action="createEffect">
       <i class="fa-solid fa-plus"></i> {{localize 'SCARMARK.Add'}}
     </a>
+    {{/unless}}
   </div>
   <ol class="effects-list flat">
     {{#each effects as |effect|}}
