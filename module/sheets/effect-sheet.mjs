@@ -5,7 +5,7 @@
  */
 import { TEMPLATE_DIR, FLAGS, PACKS } from "../constants.mjs";
 import { ALTERATION_REPAIR, EFFECT_TARGET_CHARACTER } from "../config/index.mjs";
-import { buildEffectTypes } from "../view/effects-view.mjs";
+import { buildEffectTypes, rowsForType } from "../view/effects-view.mjs";
 import { buildEffectSheet } from "../view/effect-sheet-view.mjs";
 import { listActionTests } from "../helpers/action-tests.mjs";
 import { listEffectLibrary, submitEffectToLibrary } from "../helpers/effect-library.mjs";
@@ -98,11 +98,9 @@ export default class ScarmarkEffectSheet extends HandlebarsApplicationMixin(Docu
     if (scope[FLAGS.immediate] || type !== EFFECT_TARGET_CHARACTER) data.transfer = false;
     if (scope[FLAGS.immediate]) scope[FLAGS.unique] = false;
     if (data.system?.changes) {
-      const rows = Object.values(data.system.changes);
-      const offered = new Set(picker.types.find(entry => entry.type === type)?.groups.flatMap(group => group.options.map(([key]) => key)));
       const picker = this.#picker();
-      const changed = (this.document.getFlag(FLAGS.scope, FLAGS.effectType) ?? picker.start) !== type;
-      data.system.changes = changed ? rows.filter(row => !row.key || offered.has(row.key)) : rows;
+      const before = this.document.getFlag(FLAGS.scope, FLAGS.effectType) ?? picker.start;
+      data.system.changes = rowsForType(Object.values(data.system.changes), picker, type, before !== type);
     }
     data.flags = { ...(data.flags ?? {}), [FLAGS.scope]: scope };
     return data;

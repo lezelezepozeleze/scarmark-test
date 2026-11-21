@@ -85,3 +85,17 @@ export function buildEffectTypes(effectDoc, context) {
   }));
   return { start, types };
 }
+
+/**
+ * The change rows to keep when the form is saved: all of them, except right after the user picked another type, when the rows whose stat that type does not offer are dropped (a blank row stays).
+ *
+ * @param {{key?: string}[]} rows the change rows of the form
+ * @param {{types: {type: string, groups: {options: [string, string][]}[]}[]}} picker see buildEffectTypes
+ * @param {string} type the type now chosen
+ * @param {boolean} changed whether the user just picked it
+ */
+export function rowsForType(rows, picker, type, changed) {
+  if (!changed) return rows;
+  const offered = new Set(picker.types.find(entry => entry.type === type)?.groups.flatMap(group => group.options.map(([key]) => key)));
+  return rows.filter(row => !row.key || offered.has(row.key));
+}

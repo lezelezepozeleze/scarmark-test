@@ -4,7 +4,7 @@ import { test } from "node:test";
 import assert from "node:assert";
 import { SYSTEM_ID } from "../module/constants.mjs";
 import { changeOf, rewriteTarget, rewrittenValues, rewrittenItem, itemModsOf, isImmediateEffect } from "../module/rules/index.mjs";
-import { buildEffectTypes } from "../module/view/effects-view.mjs";
+import { buildEffectTypes, rowsForType } from "../module/view/effects-view.mjs";
 import { buildEffectSheet } from "../module/view/effect-sheet-view.mjs";
 import { createRenderer } from "./support/render.mjs";
 
@@ -104,4 +104,13 @@ test("effect sheet template: renders the rows, the kind choice and the sections 
   for (const action of ["editImage", "addChange", "deleteChange", "submitToLibrary"]) assert.ok(html.includes(`data-action="${action}"`), action);
   const immediate = renderer.render("systems/scarmark-test/templates/effect/sheet.hbs", sheet(effect({ effectType: "armor", immediate: true })));
   assert.ok(immediate.includes('name="repair"') && !immediate.includes('name="duration.value"') && !immediate.includes("onHitTest"));
+});
+
+test("rowsForType: kept as they are, unless the type was just changed: then the stats the new type does not offer go, a blank row stays", () => {
+  const picker = buildEffectTypes(actor, { localize: t });
+  const rows = [{ key: "system.attributes.str.base" }, { key: "" }, { key: "system.itemMods.attack" }];
+  assert.deepStrictEqual(rowsForType(rows, picker, "weapon", false), rows);
+  assert.deepStrictEqual(rowsForType(rows, picker, "weapon", true), [{ key: "" }, { key: "system.itemMods.attack" }]);
+  assert.deepStrictEqual(rowsForType(rows, picker, "character", true), [{ key: "system.attributes.str.base" }, { key: "" }]);
+  assert.deepStrictEqual(rowsForType(rows, picker, "unknown", true), [{ key: "" }]);
 });

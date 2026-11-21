@@ -2,6 +2,10 @@
 
 All notable changes to the Scarmark system.
 
+## 1.1.10-beta - 2026-11-21
+
+- Fix: saving the effect sheet failed with "can't access lexical declaration 'picker' before initialization". The rule for dropping change rows after picking another type is now a plain function (`rowsForType`) with a test.
+
 ## 1.1.9-beta - 2026-11-21
 
 - New effect sheet, replacing Foundry's own window for every Active Effect. One form: the name and icon; "This effect is about" (Character, Weapon, Armor) and "It is" (Ongoing or Immediate); the changes as rows of stat, do, value and priority; how long it lasts; only one at a time; and for a weapon the poison it carries. Picking a type or kind redraws the form. A weapon or armor row now has the priority field again (an empty one shows the default of its type as a hint). Character rows offer add, multiply, at least, at most and set; weapon, armor and immediate rows offer add and set.
