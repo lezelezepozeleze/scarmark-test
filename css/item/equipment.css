@@ -65,6 +65,18 @@
   margin: 0 0 6px;
 }
 
+/* Gear Details: three equal columns (In container | Usable over Consumable | Toxicity); the checkboxes stack in the middle one. */
+.scarmark .in-container-row.gear-details-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.scarmark .in-container-row .checkbox-toggles.stacked {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: 8px;
+}
+
 /* Container | Consumable | Toxicity read as one row: the checkbox label and the Toxicity label use the same font as the Container label (.plain-label). */
 .scarmark .in-container-row .checkbox-label {
   font-family: inherit;

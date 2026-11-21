@@ -89,7 +89,7 @@ export async function resolveRange(data, defense, defParams = {}) {
   if (!outcome.attackerStrikes) extra.push(`<div class="card-line"><i>${L("noStrike")}</i></div>`);
   await postResultCard(x, resultCard(data, defense, x, extra));
 
-  if (outcome.attackerStrikes) await postStrike(attacker, target, data.aspect, data.impact, outcome.strikeDice, { armorPiercing: data.armorPiercing, skill: data.skill, aim: data.aim, part: data.part, weapon: attacker.items.get(data.missile) ?? null });
+  if (outcome.attackerStrikes) await postStrike(attacker, target, data.aspect, data.impact, outcome.strikeDice, { armorPiercing: data.armorPiercing, skill: data.skill, aim: data.aim, part: data.part });
 
   // A missile carries no WQ, so only the blocking shield tests: only when the
   // shot actually landed on it (a Block result) and hit hard enough (BLOCK_CLASH_MIN_IMPACT).

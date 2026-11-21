@@ -1,9 +1,9 @@
-// Unique effects (rules/effect-unique.mjs), missile modifiers (rules/item-mods.mjs) and the type step of the effect picker (view/effects-view.mjs). All pure.
+// Unique effects (rules/effect-unique.mjs) and the type step of the effect picker (view/effects-view.mjs). All pure.
 import "./support/foundry-stub.mjs";
 import { test } from "node:test";
 import assert from "node:assert";
 import { SYSTEM_ID } from "../module/constants.mjs";
-import { isUniqueEffect, effectIdentity, uniqueConflict, missileEffective, itemModsOf } from "../module/rules/index.mjs";
+import { isUniqueEffect, effectIdentity, uniqueConflict } from "../module/rules/index.mjs";
 import { buildEffectTypes } from "../module/view/effects-view.mjs";
 
 const effect = (name, scope = {}, extra = {}) => ({ name, flags: { [SYSTEM_ID]: scope }, ...extra });
@@ -33,22 +33,15 @@ test("uniqueConflict: two copies of one alteration entry are the same effect wha
   assert.strictEqual(uniqueConflict([first], effect("Edge honed", { unique: true, improvedBy: "Compendium.x.alt.9" })), null);
 });
 
-test("missileEffective: the impact per range band plus the modifiers", () => {
-  const missile = { impact: { short: 5, medium: 4, long: 3, extreme: 1 } };
-  const mods = itemModsOf([{ disabled: false, transfer: false, system: { changes: [{ key: "system.itemMods.impact.long", type: "add", value: 2 }, { key: "system.itemMods.impact.short", type: "add", value: -1 }] } }]);
-  assert.deepStrictEqual(missileEffective(missile, mods), { impact: { short: 4, medium: 4, long: 5, extreme: 1 } });
-  assert.deepStrictEqual(missileEffective(missile, {}).impact, missile.impact);
-});
-
-test("buildEffectTypes: character, weapon, armor and missile with their operations; the start is the kind of item the effect sits on", () => {
+test("buildEffectTypes: character, weapon and armor with their operations; the start is the kind of item the effect sits on", () => {
   const context = { localize: key => key, skillNames: ["Vitality"] };
   const onActor = buildEffectTypes({ parent: { documentName: "Actor", items: [] } }, context);
-  assert.deepStrictEqual(onActor.types.map(entry => entry.type), ["character", "weapon", "armor", "missile"]);
+  assert.deepStrictEqual(onActor.types.map(entry => entry.type), ["character", "weapon", "armor"]);
   assert.strictEqual(onActor.start, "character");
   const keys = (type) => onActor.types.find(entry => entry.type === type).groups.flatMap(group => group.options.map(([key]) => key));
   assert.ok(keys("character").includes("system.mods.skill.Vitality"));
   assert.ok(keys("character").every(key => !key.startsWith("system.itemMods.")));
-  assert.deepStrictEqual(onActor.types.map(entry => entry.operations), [[], [], ["repair"], []]);
+  assert.deepStrictEqual(onActor.types.map(entry => entry.operations), [[], [], ["repair"]]);
   assert.strictEqual(buildEffectTypes({ parent: { documentName: "Item", type: "armor", parent: { documentName: "Actor", items: [] } } }, context).start, "armor");
   assert.strictEqual(buildEffectTypes({ parent: { documentName: "Item", type: "gear" } }, context).start, "character");
   assert.strictEqual(buildEffectTypes({ transfer: true, parent: { documentName: "Item", type: "weapon" } }, context).start, "character", "an effect that transfers to the owner is about the character");

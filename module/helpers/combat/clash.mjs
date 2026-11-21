@@ -5,7 +5,7 @@ import { L } from "./util.mjs";
 import { postStrike } from "./strike.mjs";
 import { updateCombatItem } from "./gm-update.mjs";
 import { esc } from "../escape.mjs";
-import { locationKey } from "../../rules/index.mjs";
+import { locationKey, effectiveStat } from "../../rules/index.mjs";
 import { WQ_TEST_FORMULA, WQ_BREAK_MARGIN, BODY_PART_STRIKE, SHIELD_MIN_WQ, SHIELD_WEAR_STEP, ARMOR_LOCATIONS } from "../../config/index.mjs";
 
 /**
@@ -15,7 +15,7 @@ import { WQ_TEST_FORMULA, WQ_BREAK_MARGIN, BODY_PART_STRIKE, SHIELD_MIN_WQ, SHIE
  * so a battered shield grows likelier to break until an armorer restores it.
  */
 async function weaponBreakTest(weapon) {
-  const wq = weapon.system.quality ?? 0;
+  const wq = effectiveStat(weapon.system, "quality") ?? 0;
   const roll = await new Roll(WQ_TEST_FORMULA).evaluate();
   return { roll, wq, broken: roll.total >= wq + WQ_BREAK_MARGIN, worn: isShield(weapon) && roll.total > wq };
 }
@@ -62,7 +62,7 @@ export async function resolveWeaponClash({ attacker, attackerWeapon, defender, d
   if (defenderWeapon) participants.push({ weapon: defenderWeapon, opponent: attacker });
   if (!participants.length) return;
   // Lower WQ first; the attacker (index 0) keeps priority on a tie (stable sort).
-  participants.sort((a, b) => (a.weapon.system.quality ?? 0) - (b.weapon.system.quality ?? 0));
+  participants.sort((a, b) => (effectiveStat(a.weapon.system, "quality") ?? 0) - (effectiveStat(b.weapon.system, "quality") ?? 0));
 
   const taFor = [];
   for (const p of participants) {
@@ -77,7 +77,7 @@ export async function resolveWeaponClash({ attacker, attackerWeapon, defender, d
     }
     if (t.worn) {
       // Floor at 1: WQ 0 is the body-part sentinel and must never be reached by wear.
-      const worn = Math.max(SHIELD_MIN_WQ, t.wq - SHIELD_WEAR_STEP);
+      const worn = Math.max(SHIELD_MIN_WQ, (p.weapon.system.quality ?? 0) - SHIELD_WEAR_STEP);
       await updateCombatItem(p.weapon, { "system.quality": worn });
       lines.push(`<div class="card-line">${game.i18n.format("SCARMARK.CombatAuto.wqShieldWorn", { name: esc(p.weapon.name), wq: worn })}</div>`);
     } else {

@@ -1,7 +1,7 @@
 /**
  * Data model of the "missile" item type (ammunition, thrown weapons). Owns the stored fields and the derived totalWeight / totalValue.
  */
-import { itemTotals, itemModsOf, missileEffective } from "../rules/index.mjs";
+import { itemTotals } from "../rules/index.mjs";
 import { quantityField, weightField, valueField, carriedField, containerField, actionsField } from "./shared-fields.mjs";
 import { QUALITY_INITIAL, QUALITY_MAX, SPELL_CLASS_MAX, ESOTERIC_MIN, DAMAGE_ASPECTS, COMBAT_SKILLS, MISSILE_VELOCITIES, RANGE_PENALTY } from "../config/index.mjs";
 
@@ -77,7 +77,5 @@ export default class ScarmarkMissileData extends foundry.abstract.TypeDataModel 
   prepareDerivedData() {
     // weight/value are per-unit; these feed the Actor's Load and Gear totals (rules/inventory.mjs gearSummary).
     Object.assign(this, itemTotals(this.weight, this.value, this.quantity));
-    // The impact per range band as combat sees it: the stored values plus the modifiers of the effects on this item (rules/item-mods.mjs). The stored fields stay as they are.
-    this.effective = missileEffective(this, itemModsOf(this.parent?.effects));
   }
 }

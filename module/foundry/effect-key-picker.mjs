@@ -6,7 +6,7 @@ import { buildEffectTypes } from "../view/effects-view.mjs";
 import { esc } from "../helpers/escape.mjs";
 import { listActionTests } from "../helpers/action-tests.mjs";
 import { listEffectLibrary } from "../helpers/effect-library.mjs";
-import { ON_HIT_ITEM_TYPES } from "../config/index.mjs";
+import { ON_HIT_ITEM_TYPES, ITEM_MOD_DEFAULT_PRIORITY, EFFECT_TARGET_CHARACTER } from "../config/index.mjs";
 
 /** The canonical skill names from the Skills compendium (filled by cacheSkillNames). */
 let skillNames = [];
@@ -66,14 +66,16 @@ async function fillOnHitChoices(box) {
   fill(box.querySelector(".scarmark-onhit-effect"), library.map(group => ({ label: group.label, options: group.entries.map(e => [e.uuid, e.name]) })));
 }
 
-/** renderActiveEffectConfig: add the Scarmark box (what it is about, ongoing or immediate, unique) and, before every change-key input, a stat picker that lists only the stats of the chosen type. */
+/** renderActiveEffectConfig: add the Scarmark box (what it is about, ongoing or immediate, on hit, unique) and, before every change-key input, a stat picker that lists only the stats of the chosen type. A weapon or armor effect gets plain rows (stat, add or set, value). The window can redraw its rows, so the rows are read again on every render. */
 function addPickers(app, html) {
   const root = html instanceof HTMLElement ? html : html?.[0];
-  if (!root || root.querySelector(".scarmark-effect-kind")) return;
+  if (!root) return;
+  const form = root.matches?.("form") ? root : (root.querySelector("form") ?? root);
+  const existing = form.querySelector(".scarmark-effect-kind");
+  if (existing) return existing.refresh();
 
   const effectDoc = app.document ?? app.object;
   const picker = buildEffectTypes(effectDoc, { skillNames, localize: (key) => game.i18n.localize(key) });
-  const form = root.matches?.("form") ? root : (root.querySelector("form") ?? root);
   const footer = form.querySelector("footer, .form-footer");
   form.insertAdjacentHTML("beforeend", kindBoxHtml(effectDoc, picker));
   const box = form.querySelector(".scarmark-effect-kind");
@@ -86,28 +88,44 @@ function addPickers(app, html) {
   const onHitRow = box.querySelector(".scarmark-onhit-row");
   const current = () => picker.types.find(entry => entry.type === typeSelect.value) ?? picker.types[0];
 
-  const selects = [];
-  for (const input of root.querySelectorAll('input[name$=".key"]')) {
-    if (input.previousElementSibling?.classList?.contains("scarmark-key-picker")) continue;
-    const select = document.createElement("select");
-    select.className = "scarmark-key-picker";
-    select.addEventListener("change", () => {
-      if (!select.value) return;
-      input.value = select.value;
-      input.dispatchEvent(new Event("change", { bubbles: true }));
-    });
-    input.parentElement.insertBefore(select, input);
-    selects.push({ select, input });
-  }
+  /** Put a stat roll-down before a change-key input that has none, and return the roll-downs of all of them. */
+  const keyPickers = () => [...form.querySelectorAll('input[name$=".key"]')].map(input => {
+    let select = input.previousElementSibling;
+    if (!select?.classList?.contains("scarmark-key-picker")) {
+      select = document.createElement("select");
+      select.className = "scarmark-key-picker";
+      select.addEventListener("change", () => {
+        if (!select.value) return;
+        input.value = select.value;
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      input.parentElement.insertBefore(select, input);
+    }
+    return { select, input };
+  });
 
-  /** Fill the stat roll-downs for the chosen type, and make the rest of the box agree with it. `changed` is true when the user just picked the type (only then is Transfer touched, so opening a sheet never changes the effect). */
+  /** A weapon or armor row is only a stat, add or set, and a value: the other change types are hidden, "override" reads "set", the priority is hidden (a set wins over an add). A character row is Foundry's own. */
+  const shapeChangeRows = (plain) => {
+    for (const select of form.querySelectorAll('select[name$=".type"]')) {
+      for (const option of select.options) {
+        option.dataset.label ??= option.textContent;
+        option.hidden = plain && !(option.value in ITEM_MOD_DEFAULT_PRIORITY);
+        option.textContent = plain && option.value === "override" ? game.i18n.localize("SCARMARK.EffectPicker.changeSet") : option.dataset.label;
+      }
+      if (plain && !(select.value in ITEM_MOD_DEFAULT_PRIORITY)) select.value = "add";
+    }
+    for (const input of form.querySelectorAll('input[name$=".priority"]')) (input.closest(".form-group") ?? input).hidden = plain;
+  };
+
+  /** Make the whole window agree with the chosen type and kind. `changed` is true when the user just picked the type (only then is Transfer touched, so opening a sheet never changes the effect). */
   const refresh = (changed = false) => {
     const type = current();
-    for (const { select, input } of selects) {
+    for (const { select, input } of keyPickers()) {
       select.innerHTML = groupsHtml(type.groups, game.i18n.localize("SCARMARK.EffectPicker.pickKey"));
       select.value = input.value || "";
     }
-    // The immediate kind is for the items that have an operation (a weapon, an armor piece); the others are always ongoing.
+    shapeChangeRows(type.type !== EFFECT_TARGET_CHARACTER);
+    // The immediate kind is for the items that have an operation (an armor piece); the others are always ongoing.
     const immediateAllowed = type.operations.length > 0;
     kindSelect.querySelector('option[value="immediate"]').disabled = !immediateAllowed;
     if (!immediateAllowed) kindSelect.value = "ongoing";
@@ -116,14 +134,15 @@ function addPickers(app, html) {
     const wanted = operationSelect.dataset.value;
     operationSelect.value = kindSelect.value === "immediate" ? (type.operations.includes(wanted) ? wanted : (type.operations[0] ?? "")) : "";
     immediateRow.hidden = kindSelect.value !== "immediate";
-    // Firing when the item wounds only makes sense on a weapon or a missile.
+    // Firing when the item wounds only makes sense on a weapon.
     onHitRow.hidden = !ON_HIT_ITEM_TYPES.includes(type.type);
     // An item effect must not transfer to the owner or its stats would not count.
-    if (changed && type.type !== "character") {
+    if (changed && type.type !== EFFECT_TARGET_CHARACTER) {
       const transfer = form.querySelector('input[name="transfer"]');
       if (transfer) transfer.checked = false;
     }
   };
+  box.refresh = refresh;
   fillOnHitChoices(box);
   typeSelect.addEventListener("change", () => refresh(true));
   kindSelect.addEventListener("change", () => refresh());

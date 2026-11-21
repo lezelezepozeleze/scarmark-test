@@ -1,59 +1,71 @@
-/** Modifiers on the stats of a weapon or armor piece: an Active Effect on the item (not transferring to the owner) with changes on ITEM_MOD_KEY_PREFIX keys adds to the stat. The stored fields are never touched; the item exposes the sums as system.effective and combat reads those. Pure. */
-import { ITEM_MOD_KEY_PREFIX, DAMAGE_ASPECTS, RANGE_PENALTY } from "../config/index.mjs";
+/** Modifiers on the stats of a weapon or armor piece: an Active Effect on the item (not transferring to the owner) with changes on ITEM_MOD_KEY_PREFIX keys adds to a stat or sets it. The stored fields are never touched; the item exposes the result as system.effective and combat reads that. Pure. */
+import { ITEM_MOD_KEY_PREFIX, ITEM_MOD_DEFAULT_PRIORITY, DAMAGE_ASPECTS } from "../config/index.mjs";
 
-/** Whether a change adds (a V14 `type: "add"`, an older numeric `mode: 2`, or neither stated). */
-const isAdd = (change) => change.type ? change.type === "add" : (change.mode === undefined || change.mode === 2);
+/** The kind of a change, "add" or "override" (shown as "set"); null for any other, which items ignore. A V14 `type`, or the older numeric `mode` (2 add, 5 override); neither stated means add. */
+function changeType(change) {
+  if (change.type) return change.type in ITEM_MOD_DEFAULT_PRIORITY ? change.type : null;
+  if (change.mode === undefined || change.mode === 2) return "add";
+  return change.mode === 5 ? "override" : null;
+}
+
+/** The priority of a change: the one it states, else the default of its type (add before set, so a set wins). */
+const priorityOf = (change, type) => (change.priority === null || change.priority === undefined || change.priority === "" || !Number.isFinite(Number(change.priority)) ? ITEM_MOD_DEFAULT_PRIORITY[type] : Number(change.priority));
 
 /**
- * The sum of the item-stat changes of the effects of an item.
+ * The item-stat changes of the effects of an item, per stat.
  *
  * @param {Array<{disabled?: boolean, transfer?: boolean, system?: {changes?: object[]}, changes?: object[]}>} effects the item's effects (those that are disabled or that transfer to the owner count for nothing)
- * @returns {Object<string, number>} stat -> sum, e.g. { "impact.edged": 2, attack: -1 }
+ * @returns {Object<string, {type: "add"|"override", value: number, priority: number}[]>} stat -> changes, e.g. { "impact.edged": [{ type: "add", value: 2, priority: 20 }] }
  */
 export function itemModsOf(effects) {
   const mods = {};
   for (const effect of effects ?? []) {
     if (effect.disabled || effect.transfer) continue;
     for (const change of effect.system?.changes ?? effect.changes ?? []) {
-      if (!String(change.key ?? "").startsWith(ITEM_MOD_KEY_PREFIX) || !isAdd(change)) continue;
+      const type = String(change.key ?? "").startsWith(ITEM_MOD_KEY_PREFIX) ? changeType(change) : null;
       const value = Number(change.value);
-      if (!Number.isFinite(value)) continue;
-      const stat = change.key.slice(ITEM_MOD_KEY_PREFIX.length);
-      mods[stat] = (mods[stat] ?? 0) + value;
+      if (!type || !Number.isFinite(value)) continue;
+      (mods[change.key.slice(ITEM_MOD_KEY_PREFIX.length)] ??= []).push({ type, value, priority: priorityOf(change, type) });
     }
   }
   return mods;
 }
 
-/** The weapon stats with the modifiers added. An impact of -1 ("this weapon lacks the aspect") stays -1. */
+/** A stat with its changes applied in priority order (equal priorities in the order the effects are on the item): an add adds, a set replaces the value so far. */
+export function applyItemMods(base, changes = []) {
+  return [...changes].sort((a, b) => a.priority - b.priority).reduce((value, change) => (change.type === "override" ? change.value : value + change.value), base);
+}
+
+/** The weapon stats with the modifiers applied. An impact of -1 ("this weapon lacks the aspect") and a durability of 0 ("not a breakable weapon", natural weapons) stay as they are. */
 export function weaponEffective(weapon, mods) {
   const impact = {};
   for (const aspect of Object.keys(DAMAGE_ASPECTS)) {
     const base = weapon.impact?.[aspect] ?? 0;
-    impact[aspect] = base < 0 ? base : base + (mods[`impact.${aspect}`] ?? 0);
+    impact[aspect] = base < 0 ? base : applyItemMods(base, mods[`impact.${aspect}`]);
   }
-  return { attack: (weapon.attack ?? 0) + (mods.attack ?? 0), defense: (weapon.defense ?? 0) + (mods.defense ?? 0), impact };
+  const quality = weapon.quality ?? 0;
+  return {
+    quality: quality > 0 ? applyItemMods(quality, mods.quality) : quality,
+    attack: applyItemMods(weapon.attack ?? 0, mods.attack),
+    defense: applyItemMods(weapon.defense ?? 0, mods.defense),
+    specialization: applyItemMods(weapon.specialization ?? 0, mods.specialization),
+    impact
+  };
 }
 
-/** The armor protection with the modifiers added. */
+/** The armor protection with the modifiers applied, and the coverage with the durability modifiers applied to the condition of every location (the stored conditions are what wear lowers). */
 export function armorEffective(armor, mods) {
   const protection = {};
-  for (const aspect of Object.keys(DAMAGE_ASPECTS)) protection[aspect] = (armor.protection?.[aspect] ?? 0) + (mods[`protection.${aspect}`] ?? 0);
-  return { protection };
-}
-
-/** The missile impact per range band with the modifiers added. */
-export function missileEffective(missile, mods) {
-  const impact = {};
-  for (const band of Object.keys(RANGE_PENALTY)) impact[band] = (missile.impact?.[band] ?? 0) + (mods[`impact.${band}`] ?? 0);
-  return { impact };
+  for (const aspect of Object.keys(DAMAGE_ASPECTS)) protection[aspect] = applyItemMods(armor.protection?.[aspect] ?? 0, mods[`protection.${aspect}`]);
+  const coverage = mods.quality ? Array.from(armor.coverage ?? [], entry => ({ ...entry, condition: Math.max(0, applyItemMods(entry.condition ?? 0, mods.quality)) })) : armor.coverage;
+  return { protection, coverage };
 }
 
 /**
- * A stat of a weapon, armor piece or missile as combat sees it: the effective value (modifiers added) when the item has one, else the stored one.
+ * A stat of a weapon or armor piece as combat sees it: the effective value (modifiers applied) when the item has one, else the stored one.
  *
  * @param {object} system the item's system data
- * @param {string} path e.g. "attack", "impact.edged", "protection.blunt"
+ * @param {string} path e.g. "attack", "impact.edged", "protection.blunt", "quality", "coverage"
  */
 export function effectiveStat(system, path) {
   const read = (data) => path.split(".").reduce((value, key) => value?.[key], data);

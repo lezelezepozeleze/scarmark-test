@@ -22,10 +22,10 @@ function combatSkillEsl(actor, key) {
 }
 
 /** A weapon's Attack Skill Level: the combat skill's ESL + the weapon's attack and specialization + the actor's melee attack modifier. */
-export const weaponAsl = (actor, w) => combatSkillEsl(actor, w.system.associatedSkill) + effectiveStat(w.system, "attack") + w.system.specialization + (actor.system.mods?.meleeAttack ?? 0);
+export const weaponAsl = (actor, w) => combatSkillEsl(actor, w.system.associatedSkill) + effectiveStat(w.system, "attack") + effectiveStat(w.system, "specialization") + (actor.system.mods?.meleeAttack ?? 0);
 
 /** A weapon's Defense Skill Level: the combat skill's ESL + the weapon's defense and specialization + the actor's melee defense modifier. */
-export const weaponDsl = (actor, w) => combatSkillEsl(actor, w.system.associatedSkill) + effectiveStat(w.system, "defense") + w.system.specialization + (actor.system.mods?.meleeDefense ?? 0);
+export const weaponDsl = (actor, w) => combatSkillEsl(actor, w.system.associatedSkill) + effectiveStat(w.system, "defense") + effectiveStat(w.system, "specialization") + (actor.system.mods?.meleeDefense ?? 0);
 
 /** The Defense Skill Level of blocking with armor, no weapon: the combat skill's ESL + the actor's melee defense modifier. */
 export const armorBlockDsl = (actor) => combatSkillEsl(actor, ARMOR_BLOCK_SKILL) + (actor.system.mods?.meleeDefense ?? 0);

@@ -25,15 +25,17 @@ export const IMMEDIATE_OPERATIONS = {
 
 /** The kinds of thing an effect is about (the first step of the effect picker): the character, or one kind of item. */
 export const EFFECT_TARGET_CHARACTER = "character";
-export const EFFECT_TARGET_TYPES = [EFFECT_TARGET_CHARACTER, "weapon", "armor", "missile"];
+export const EFFECT_TARGET_TYPES = [EFFECT_TARGET_CHARACTER, "weapon", "armor"];
 
-/** The stats an effect on a weapon or armor can modify. The effect change key is ITEM_MOD_KEY_PREFIX + the stat (e.g. "system.itemMods.impact.edged"), type add; the item sums them (rules/item-mods.mjs) into system.effective, which combat reads. The stored fields are never changed. */
+/** The stats an effect on a weapon or armor can modify. The effect change key is ITEM_MOD_KEY_PREFIX + the stat (e.g. "system.itemMods.impact.edged"), with type add or set (Foundry's override); the item applies them (rules/item-mods.mjs) into system.effective, which combat reads. The stored fields are never changed. Durability (quality) of armor means the condition of every location. */
 export const ITEM_MOD_KEY_PREFIX = "system.itemMods.";
 export const ITEM_MOD_STATS = {
-  weapon: ["attack", "defense", "impact.blunt", "impact.edged", "impact.piercing", "impact.fire"],
-  armor: ["protection.blunt", "protection.edged", "protection.piercing", "protection.fire"],
-  missile: ["impact.short", "impact.medium", "impact.long", "impact.extreme"]
+  weapon: ["quality", "attack", "defense", "specialization", "impact.blunt", "impact.edged", "impact.piercing", "impact.fire"],
+  armor: ["quality", "protection.blunt", "protection.edged", "protection.piercing", "protection.fire"]
 };
+
+/** The change types an item effect offers (add, set) and the priority each gets when the change states none: Foundry's own defaults, so a set wins over an add. */
+export const ITEM_MOD_DEFAULT_PRIORITY = { add: 20, override: 50 };
 
 /** "on": who an add-effect action's effect goes onto: the actor that carries the item, or the selected tokens. */
 export const ACTION_TARGET_SELF = "self";
@@ -63,5 +65,5 @@ export const ACTION_TRIGGERS = {
 
 /** The test an on-hit effect (a poison on a blade) asks of the target when it does not name one (same format as the tests of the Actions panel). */
 export const ON_HIT_DEFAULT_TEST = "skill:Vitality";
-/** The kinds of item whose effects can fire when the item wounds. */
-export const ON_HIT_ITEM_TYPES = ["weapon", "missile"];
+/** The kinds of item whose effects can fire when the item wounds (weapons; missiles later). */
+export const ON_HIT_ITEM_TYPES = ["weapon"];

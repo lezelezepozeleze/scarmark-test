@@ -1,15 +1,16 @@
 {{#> "systems/scarmark-test/templates/item/partials/details-tab.hbs"}}
 
-  <div class="in-container-row">
+  {{!-- Three columns: In container and its select | Usable over Consumable | Toxicity and its number (Toxicity only while Consumable is ticked). --}}
+  <div class="in-container-row gear-details-row">
     {{> "systems/scarmark-test/templates/item/partials/container-select.hbs"}}
-    <div class="checkbox-toggles">
-      <label class="checkbox-label">
-        <input type="checkbox" name="system.consumable" {{#if system.consumable}}checked{{/if}} />
-        {{localize 'SCARMARK.Gear.consumable'}}
-      </label>
+    <div class="checkbox-toggles stacked">
       <label class="checkbox-label">
         <input type="checkbox" name="system.usable" {{#if system.usable}}checked{{/if}} />
         {{localize 'SCARMARK.Gear.usable'}}
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" name="system.consumable" {{#if system.consumable}}checked{{/if}} />
+        {{localize 'SCARMARK.Gear.consumable'}}
       </label>
     </div>
     {{#if system.consumable}}

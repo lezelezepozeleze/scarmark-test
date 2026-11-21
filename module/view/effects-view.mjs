@@ -57,16 +57,16 @@ function characterKeyGroups(effectDoc, { skillNames = [], localize: t }) {
   return groups;
 }
 
-/** The labels of the stat parts: the first part of a key ("impact", "protection", ...) and the second (a damage aspect or a range band). */
+/** The labels of the stat parts: the first part of a key ("quality", "impact", "protection", ...) and the second (a damage aspect). */
 const statLabel = (stat, t) => stat.split(".").map((part, i) => (i === 0 ? t(`SCARMARK.EffectPicker.item.${part}`) : t(`SCARMARK.EffectPicker.part.${part}`))).join(": ");
 
-/** The group of the stats an effect can change on one kind of item (weapon, armor, missile): [key, label] options with the item-mod key prefix. */
+/** The group of the stats an effect can change on one kind of item (weapon, armor): [key, label] options with the item-mod key prefix. */
 function itemStatGroup(type, t) {
   return { label: t(`SCARMARK.EffectPicker.groupItem.${type}`), options: ITEM_MOD_STATS[type].map(stat => [`${ITEM_MOD_KEY_PREFIX}${stat}`, statLabel(stat, t)]) };
 }
 
 /**
- * The first step of the effect picker: what the effect is about (the character, a weapon, an armor piece or a missile) and, per choice, the stats it can change and the one-shot operations it can do. The type to start on is the kind of item the effect sits on (unless it transfers to the owner), else the character.
+ * The first step of the effect picker: what the effect is about (the character, a weapon or an armor piece) and, per choice, the stats it can change and the one-shot operations it can do. The type to start on is the kind of item the effect sits on (unless it transfers to the owner), else the character.
  *
  * @param {object} effectDoc the ActiveEffect being edited
  * @param {{skillNames?: string[], localize: (key: string) => string}} context the canonical skill names (from the Skills compendium) and the translator

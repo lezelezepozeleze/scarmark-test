@@ -82,7 +82,7 @@ export function prepareCombat(context, actor, items) {
     return {
       id: w.id, name: w.name, img: w.img,
       qty: w.system.quantity, wq: w.system.quality,
-      a: effectiveStat(w.system, "attack"), d: effectiveStat(w.system, "defense"), spec: w.system.specialization,
+      a: effectiveStat(w.system, "attack"), d: effectiveStat(w.system, "defense"), spec: effectiveStat(w.system, "specialization"),
       b: asp(effectiveStat(w.system, "impact.blunt")), e: asp(effectiveStat(w.system, "impact.edged")),
       p: asp(effectiveStat(w.system, "impact.piercing")), f: asp(effectiveStat(w.system, "impact.fire")),
       asl: weaponAsl(actor, w),

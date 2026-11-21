@@ -5,7 +5,7 @@ import { readModifier } from "../modifier-prompt.mjs";
 import { L, DialogV2 } from "./util.mjs";
 import { weaponOptions, aspectOptions, aimPartFields, readAim, rewireAspect, rewireAim, missileOptions } from "./dialogs.mjs";
 import { bestAspectKey, weaponAsl, missileAsl, actorToken } from "./lookup.mjs";
-import { capTarget, rangeBand, aimKey, aimPartKey, aimPenalty, effectiveStat } from "../../rules/index.mjs";
+import { capTarget, rangeBand, aimKey, aimPartKey, aimPenalty } from "../../rules/index.mjs";
 import { ARMOR_PIERCING_NAMES, DAMAGE_ASPECTS, RANGE_PENALTY } from "../../config/index.mjs";
 import { esc, escAttr } from "../escape.mjs";
 
@@ -197,9 +197,8 @@ export async function declareRangeAttack(actor, missileId = null) {
     mode: "range",
     attacker: actor.uuid,
     target: targetActor.uuid,
-    missile: missile.id,
     aspect: missile.system.aspect,
-    impact: effectiveStat(missile.system, `impact.${band}`) ?? 0,
+    impact: missile.system.impact[band] ?? 0,
     skill: missile.system.associatedSkill,
     velocity: missile.system.velocity,
     armorPiercing: ARMOR_PIERCING_NAMES.test(missile.name),

@@ -2,6 +2,11 @@
 
 All notable changes to the Scarmark system.
 
+## 1.1.8-beta - 2026-11-21
+
+- Effect window: the first line is "This effect is about" (Character, Weapon, Armor) and the stat roll-downs of the change rows list what fits it. A character row is Foundry's own (stat, type, value, priority). A weapon or armor row is a stat, add or set, and a value: the other change types and the priority are hidden, and a set replaces the value (it beats an add unless you give the add a later priority). Weapon stats: durability, attack, defense, specialization, impact (blunt, edge, piercing, fire). Armor stats: durability (the condition of every location at once) and protection (blunt, edge, piercing, fire). Combat, the clash durability test and the combat tab read the result; the stored values never change. Missiles are out for now (no missile modifiers, no poison on missiles).
+- Gear Details tab: three columns, "In container" with its roll-down, Usable over Consumable, and Toxicity with its number.
+
 ## 1.1.7-beta - 2026-11-21
 
 - Effect window, new Scarmark box: "This effect is about" (Character, Weapon, Armor, Missile) decides which stats the change-key roll-downs list (attribute and skill for a character, the item's own stats for the others) and unticks Transfer for an item type. Kind is Ongoing (lasts until removed, optionally timed) or Immediate (happens once when an alter action applies it; for now only the armor repair).

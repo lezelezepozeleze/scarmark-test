@@ -804,26 +804,21 @@
     "EffectPicker": {
       "groupItem": {
         "weapon": "Weapon stats",
-        "armor": "Armor stats",
-        "missile": "Missile stats"
+        "armor": "Armor stats"
       },
       "type": {
         "character": "Character",
         "weapon": "Weapon",
-        "armor": "Armor",
-        "missile": "Missile"
+        "armor": "Armor"
       },
       "part": {
         "blunt": "Blunt",
         "edged": "Edge",
         "piercing": "Piercing",
-        "fire": "Fire",
-        "short": "Short range",
-        "medium": "Medium range",
-        "long": "Long range",
-        "extreme": "Extreme range"
+        "fire": "Fire"
       },
       "about": "This effect is about",
+      "changeSet": "set",
       "kind": "Kind",
       "kindOngoing": "Ongoing - lasts until removed (or its time runs out)",
       "kindImmediate": "Immediate - happens once, when an alter action applies it (armor repair)",
@@ -836,6 +831,8 @@
       "chargesNone": "no limit",
       "unique": "Only one at a time (no second copy on the same item or actor)",
       "item": {
+        "quality": "Durability",
+        "specialization": "Specialization",
         "attack": "Attack",
         "defense": "Defense",
         "impact": "Impact",
