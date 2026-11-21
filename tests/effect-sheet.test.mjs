@@ -100,8 +100,9 @@ test("effect sheet: a key no stat list offers is kept in a group of its own; an 
 test("effect sheet template: renders the rows, the kind choice and the sections the view model switches on", () => {
   const renderer = createRenderer();
   const html = renderer.render("systems/scarmark-test/templates/effect/sheet.hbs", sheet(effect({ effectType: "weapon" })));
-  for (const name of ["name", "disabled", "flags.scarmark-test.effectType", "flags.scarmark-test.kind", "system.changes.0.key", "system.changes.0.type", "system.changes.0.value", "system.changes.0.priority", "system.changes.0.phase", "duration.value", "duration.units", "flags.scarmark-test.unique", "flags.scarmark-test.onHit", "flags.scarmark-test.onHitTest", "flags.scarmark-test.onHitEffect", "flags.scarmark-test.charges", "description"]) assert.ok(html.includes(`name="${name}"`), name);
+  for (const name of ["name", "disabled", "flags.scarmark-test.effectType", "flags.scarmark-test.kind", "system.changes.0.key", "system.changes.0.type", "system.changes.0.value", "system.changes.0.priority", "system.changes.0.phase", "duration.value", "duration.units", "flags.scarmark-test.unique", "flags.scarmark-test.onHit", "flags.scarmark-test.onHitTest", "flags.scarmark-test.onHitEffect", "flags.scarmark-test.charges"]) assert.ok(html.includes(`name="${name}"`), name);
   for (const action of ["editImage", "addChange", "deleteChange", "submitToLibrary"]) assert.ok(html.includes(`data-action="${action}"`), action);
+  assert.ok(!html.includes("prose-mirror"), "an effect has no description on this sheet");
   const immediate = renderer.render("systems/scarmark-test/templates/effect/sheet.hbs", sheet(effect({ effectType: "armor", immediate: true })));
   assert.ok(immediate.includes('name="repair"') && !immediate.includes('name="duration.value"') && !immediate.includes("onHitTest"));
 });

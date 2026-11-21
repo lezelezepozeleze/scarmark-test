@@ -30,7 +30,7 @@ const UNIT_LABELS = Object.fromEntries(DURATION_UNITS.map(unit => [unit, `SCARMA
 /**
  * What the effect sheet shows.
  *
- * @param {object} effect the effect as plain data ({ name, img, description, disabled, transfer, duration, system: { changes }, flags })
+ * @param {object} effect the effect as plain data ({ name, img, disabled, transfer, duration, system: { changes }, flags })
  * @param {object} o
  * @param {{start: string, types: {type: string, label: string, groups: object[]}[]}} o.picker the stats per type (effects-view.mjs buildEffectTypes)
  * @param {(key: string) => string} o.localize the translator
@@ -64,7 +64,6 @@ export function buildEffectSheet(effect, { picker, localize: t, onItem, tests = 
     flagPrefix: `flags.${FLAGS.scope}.`,
     name: effect.name ?? "",
     img: effect.img ?? "icons/svg/aura.svg",
-    description: effect.description ?? "",
     disabled: Boolean(effect.disabled),
     typeOptions: picker.types.map(entry => option(entry.type, entry.label, type)),
     kindOptions: [option("ongoing", t("SCARMARK.Effect.kindOngoing"), immediate ? "immediate" : "ongoing"), option("immediate", t("SCARMARK.Effect.kindImmediate"), immediate ? "immediate" : "ongoing")],
