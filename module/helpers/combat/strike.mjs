@@ -1,7 +1,7 @@
 /** Strike to wound: the hit location roll, armor, Wound Level and the strike card, plus the Injury Roll for damage that does not come from combat. */
 
 import { coveringArmor, armorProtection } from "./armor.mjs";
-import { L, DialogV2 } from "./util.mjs";
+import { L, DialogV2, locationName } from "./util.mjs";
 import { updateCombatItem } from "./gm-update.mjs";
 import { cardButton } from "./card-buttons.mjs";
 import { aimFilter, aspectOptions } from "./dialogs.mjs";
@@ -12,7 +12,7 @@ import {
 } from "../../rules/index.mjs";
 import { QUALITY_PERMANENT } from "../../config/index.mjs";
 import {
-  AIM, AMPUTATION_WOUND_LEVEL, DEFAULT_AIM_ZONE, DAMAGE_ASPECTS, VITAL_STATES, ARMOR_LOCATIONS, STUN_WOUND_LEVELS
+  AIM, AMPUTATION_WOUND_LEVEL, DEFAULT_AIM_ZONE, DAMAGE_ASPECTS, VITAL_STATES, STUN_WOUND_LEVELS
 } from "../../config/index.mjs";
 
 /**
@@ -145,9 +145,6 @@ async function resolveWound({ speaker, victim, title, aspect, effImpact, locatio
 
   await ChatMessage.create({ speaker: ChatMessage.getSpeaker({ actor: speaker }), content, rolls });
 }
-
-/** Display name of a struck location: the location item's own name, else the localized canonical label of its type. */
-const locationName = (location, locType) => location.name || game.i18n.localize(ARMOR_LOCATIONS[locType]?.label ?? locType);
 
 /** Chat card for a victim that has no armor location items to strike. */
 const postNoLocations = (actor) => ChatMessage.create({

@@ -1,5 +1,5 @@
 /** Actions of an item: which of them a trigger sets off. Pure. */
-import { ACTION_TRIGGER_OWNED, ACTION_KIND_TEST, ACTION_KIND_ALTER, ACTION_KIND_MESSAGE, ACTION_ALTER_IMPROVE } from "../config/index.mjs";
+import { ACTION_TRIGGER_OWNED, ACTION_KIND_TEST, ACTION_KIND_ALTER, ACTION_KIND_MESSAGE } from "../config/index.mjs";
 
 /** Whether an action rolls a test (the others, including older ones with no kind, add an effect). */
 export const isTestAction = (action) => action.kind === ACTION_KIND_TEST;
@@ -13,10 +13,7 @@ export const isMessageAction = (action) => action.kind === ACTION_KIND_MESSAGE;
 /** Whether an action adds an effect to a character (the kind of the actions before there were kinds). */
 export const isEffectAction = (action) => !isTestAction(action) && !isAlterAction(action) && !isMessageAction(action);
 
-/** Whether an action names an effect of the item to use: an add-effect action, or an improve. */
-export const usesEffect = (action) => isEffectAction(action) || (isAlterAction(action) && action.alteration === ACTION_ALTER_IMPROVE);
-
-/** What an action does, by name: the test of a test action, the alteration of an alter action, the text of a message, the effect of any other. */
+/** What an action does, by name: the test of a test action, the alteration (a compendium entry) of an alter action, the text of a message, the effect of any other. */
 const whatOf = (action) => isTestAction(action) ? action.test : (isAlterAction(action) ? action.alteration : (isMessageAction(action) ? String(action.message ?? "").trim() : action.effect));
 
 /**

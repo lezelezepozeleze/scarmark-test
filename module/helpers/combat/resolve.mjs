@@ -2,10 +2,10 @@
 
 import { testBlock } from "../chat.mjs";
 import { rollD100 } from "../dice/shared.mjs";
-import { defenseSituational, findSkillByName, weaponDsl, weaponAsl } from "./lookup.mjs";
-import { resolveOutcome, isBlockResult, dodgeVsMissile, capTarget, effectiveStat } from "../../rules/index.mjs";
+import { defenseSituational, findSkillByName, weaponDsl, weaponAsl, armorBlockDsl } from "./lookup.mjs";
+import { resolveOutcome, isBlockResult, blowBlocked, strikeDice, dodgeVsMissile, capTarget, effectiveStat } from "../../rules/index.mjs";
 import { taLines, tieLines } from "./result-lines.mjs";
-import { L } from "./util.mjs";
+import { L, locationName } from "./util.mjs";
 import { postStrike } from "./strike.mjs";
 import { resolveWeaponClash } from "./clash.mjs";
 import { esc } from "../escape.mjs";
@@ -102,12 +102,12 @@ export async function resolveRange(data, defense, defParams = {}) {
  * Resolve a declared melee attack against the defense the target chose: roll both sides, post the result card, strike for whoever won (attacker, or the defender after a Riposte or Counterattack) and clash the weapons on a block.
  * @param {object} data       the declared attack (data-combat payload of the attack card)
  * @param {string} defense    ignore | block | dodge | riposte | counterstrike
- * @param {object} [defParams] the defense dialog's answer ({weaponId, aspect, modifier})
+ * @param {object} [defParams] the defense dialog's answer ({weaponId, armorLocationId, aspect, modifier}); a block with an armor location turns a blow the block stopped onto that location
  */
 export async function resolveMelee(data, defense, defParams = {}) {
   const x = await rollExchange(data, defense, defParams, (target, defWeapon, mod) => {
     if (defense === "dodge") return (findSkillByName(target, DODGE_SKILL)?.system.esl ?? 0) + mod;
-    if (defense === "block") return (defWeapon ? weaponDsl(target, defWeapon) : 0) + mod;
+    if (defense === "block") return (defWeapon ? weaponDsl(target, defWeapon) : (defParams.armorLocationId ? armorBlockDsl(target) : 0)) + mod;
     if (defense === "counterstrike" || defense === "riposte") return (defWeapon ? weaponAsl(target, defWeapon) : 0) + mod;
     return 0;
   });
@@ -115,22 +115,26 @@ export async function resolveMelee(data, defense, defParams = {}) {
   const { attacker, target, aRoll, aLevel, dRoll, dLevel, defWeapon } = x;
 
   const outcome = resolveOutcome(aLevel, defense, dLevel, aRoll.total, dRoll?.total ?? 0);
+  // Blocking with armor: a blow the block turned aside is not lost, it lands on the location the defender chose (and meets the armor there).
+  const armorLocation = defense === "block" && !defWeapon && defParams.armorLocationId ? target.items.get(defParams.armorLocationId) : null;
+  const diverted = Boolean(armorLocation) && blowBlocked(aLevel, dLevel);
 
   const extra = [...tieLines(outcome), ...taLines(outcome, attacker, target)];
-  if (!outcome.attackerStrikes && !outcome.defenderStrikes) extra.push(`<div class="card-line"><i>${L("noStrike")}</i></div>`);
+  if (diverted) extra.push(`<div class="card-line">${esc(game.i18n.format("SCARMARK.CombatAuto.divertedTo", { location: locationName(armorLocation, armorLocation.system.locationType) }))}</div>`);
+  if (!outcome.attackerStrikes && !outcome.defenderStrikes && !diverted) extra.push(`<div class="card-line"><i>${L("noStrike")}</i></div>`);
   await postResultCard(x, resultCard(data, defense, x, extra));
 
   const weapon = attacker.items.get(data.weapon);
-  if (outcome.attackerStrikes) {
-    await postStrike(attacker, target, data.aspect, (weapon ? effectiveStat(weapon.system, `impact.${data.aspect}`) : 0) ?? 0, outcome.strikeDice, { armorPiercing: data.armorPiercing, skill: weapon?.system.associatedSkill, aim: data.aim, part: data.part });
-  }
+  const strikeFromAttacker = (dice, options = {}) => postStrike(attacker, target, data.aspect, weapon ? effectiveStat(weapon.system, `impact.${data.aspect}`) : 0, dice, { armorPiercing: data.armorPiercing, skill: weapon?.system.associatedSkill, aim: data.aim, part: data.part, ...options });
+  if (outcome.attackerStrikes) await strikeFromAttacker(outcome.strikeDice);
+  else if (diverted) await strikeFromAttacker(strikeDice(aLevel), { locationFilter: (location) => location.id === armorLocation.id });
   if (outcome.defenderStrikes && defWeapon) {
     const a = defParams.aspect || "edged";
     await postStrike(target, attacker, a, effectiveStat(defWeapon.system, `impact.${a}`) ?? 0, outcome.defStrikeDice, { armorPiercing: ARMOR_PIERCING_NAMES.test(defWeapon.name), skill: defWeapon.system.associatedSkill });
   }
 
-  // Only a Block result (the blow landed on the guard) puts the weapons in contact.
-  if (defense === "block" && isBlockResult(aLevel, dLevel)) {
+  // Only a Block result (the blow landed on the guard) puts the weapons in contact; armor has no weapon to clash.
+  if (defense === "block" && !armorLocation && isBlockResult(aLevel, dLevel)) {
     await clashOnBlock(x, attacker.items.get(data.weapon));
   }
 }

@@ -10,7 +10,7 @@ export { capTarget, outcomeLevel } from "./d100.mjs";
 export { durationSeconds, isTimedDuration } from "./time.mjs";
 export { repairedArmor, armorRepairProblem } from "./armor-care.mjs";
 export { itemModsOf, weaponEffective, armorEffective, effectiveStat } from "./item-mods.mjs";
-export { actionsFor, isTestAction, isAlterAction, isMessageAction, isEffectAction, usesEffect, parseActionTest, ownedEffectChanges } from "./actions.mjs";
+export { actionsFor, isTestAction, isAlterAction, isMessageAction, isEffectAction, parseActionTest, ownedEffectChanges } from "./actions.mjs";
 export { locationKey, covers, locationSide, hasSides, coversLocation, entryIndexesAt, holdsAt, wearIndexAt, averageCondition, startingCondition, splitBothSides, legacyCoverage, entryValue, entryFromValue, pickerEntries, armorLocationLabel } from "./locations.mjs";
 export { vitalWoundFor, severityKey, injuryFor, mendLabel, shockTarget, stunProtectionBonus } from "./wounds.mjs";
 export { spellLevelPenalty, invocationPenalty, spellTarget, invocationTarget, invocationFpCost, spellFatigue, mendWoundLevelDelta } from "./esoterics.mjs";
@@ -22,3 +22,4 @@ export { HELPER_GROUPS, HELPER_GROUP, isCarried, attackable, damageLetters, comb
 export { maneuverTextValues } from "./maneuvers.mjs";
 export { locationWeights, strikeLocationIndex, fumbleStumbleKind, impactBonusFor } from "./strike-helpers.mjs";
 export { mendTarget, psionicTarget } from "./roll-targets.mjs";
+export { blowBlocked } from "./outcome.mjs";

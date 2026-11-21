@@ -4,7 +4,7 @@ import { availableAspects, bestAspectKey, isShield, isBodyPart } from "./lookup.
 import { ALL_ASPECTS } from "./constants.mjs";
 import { DAMAGE_ASPECTS, AIM } from "../../config/index.mjs";
 import { modifierField, readModifier } from "../modifier-prompt.mjs";
-import { L, DialogV2 } from "./util.mjs";
+import { L, DialogV2, locationName } from "./util.mjs";
 import { esc } from "../escape.mjs";
 import { aimKey, aimPartKeys, aimPartKey, aimPenalty, matchesAimPart, locationSide, rangedBlockShields } from "../../rules/index.mjs";
 
@@ -34,6 +34,23 @@ export function rewireAspect(dialog, actor) {
     const w = actor.items.get(weaponSel.value);
     if (w) aspectSel.innerHTML = aspectOptions(bestAspectKey(w), w);
   });
+}
+
+/** <option> list of the actor's armor locations (a blank one first): the places a block with armor can turn a blow onto. */
+export function armorLocationOptions(actor) {
+  return `<option value=""></option>` + actor.items.filter(i => i.type === "armorLocation")
+    .map(l => `<option value="${l.id}">${esc(locationName(l, l.system.locationType))}</option>`)
+    .join("");
+}
+
+/** In a block dialog, choosing an armor location blanks the weapon and choosing a weapon blanks the armor location: a block uses one or the other. */
+export function rewireBlockChoice(dialog) {
+  const root = dialog?.element ?? dialog;
+  const weaponSel = root?.querySelector?.('select[name="weapon"]');
+  const armorSel = root?.querySelector?.('select[name="armor"]');
+  if (!weaponSel || !armorSel) return;
+  weaponSel.addEventListener("change", () => { if (weaponSel.value) armorSel.value = ""; });
+  armorSel.addEventListener("change", () => { if (armorSel.value) weaponSel.value = ""; });
 }
 
 /**
@@ -120,12 +137,12 @@ export function missileOptions(actor, selectedId) {
 }
 
 /**
- * Ask how the target defends: weapon (Block, Riposte, Counterattack), aspect (Riposte, Counterattack) and a modifier.
+ * Ask how the target defends: weapon (Block, Riposte, Counterattack), armor location (Block with armor, melee only: the weapon is then blank), aspect (Riposte, Counterattack) and a modifier.
  *
  * @param {string} defense  ignore | block | dodge | riposte | counterstrike
  * @param {Actor}  targetActor  the defender
  * @param {object|null} data  the declared attack (a range card restricts Block to the shields that can stop missiles); null for a defense roll outside an attack
- * @returns {Promise<{weaponId: string, aspect: string, modifier: number}|{}|null>} the answer ("" for a field the defense does not ask); `{}` for Ignore (no dialog); `null` when there is no weapon to offer (a notification says why) or the dialog was closed
+ * @returns {Promise<{weaponId: string, armorLocationId: string, aspect: string, modifier: number}|{}|null>} the answer ("" for a field the defense does not ask); `{}` for Ignore (no dialog); `null` when there is no weapon to offer (a notification says why) or the dialog was closed
  */
 export async function promptDefense(defense, targetActor, data) {
   if (defense === "ignore") return {};
@@ -133,6 +150,8 @@ export async function promptDefense(defense, targetActor, data) {
   const modRow = modifierField({ label: L("modifier") });
   // Counterattack and Riposte answer with a strike, so they also pick an aspect.
   const strikesBack = defense === "counterstrike" || defense === "riposte";
+  // A melee block can be made with a weapon or with an armor location (the blow is turned onto it); a missile can only be blocked with a shield.
+  const blockWithArmor = defense === "block" && data?.mode !== "range";
   let content = "";
   if (defense === "block" || strikesBack) {
     let offered;
@@ -149,8 +168,11 @@ export async function promptDefense(defense, targetActor, data) {
     } else {
       offered = targetActor.items.filter(i => i.type === "weapon" && !i.system.broken);
     }
-    const options = offered.map(w => `<option value="${w.id}">${esc(w.name)}</option>`).join("");
+    // With armor on offer the weapon box has a blank option too, and still starts on the first weapon.
+    const options = (blockWithArmor ? `<option value=""></option>` : "")
+      + offered.map((w, i) => `<option value="${w.id}"${blockWithArmor && i === 0 ? " selected" : ""}>${esc(w.name)}</option>`).join("");
     content += `<div class="form-group"><label>${L("weapon")}</label><select name="weapon">${options}</select></div>`;
+    if (blockWithArmor) content += `<div class="form-group"><label>${L("armor")}</label><select name="armor">${armorLocationOptions(targetActor)}</select></div>`;
     if (strikesBack) {
       // Aspects of the weapon the dropdown shows first (not merely the actor's first weapon,
       // which may be broken or, for a Riposte, a shield that is not offered).
@@ -160,18 +182,28 @@ export async function promptDefense(defense, targetActor, data) {
   }
   content += modRow;
 
-  return DialogV2.prompt({
+  const answer = await DialogV2.prompt({
     window: { title: `${L(defense)}` },
     content,
-    render: (event, dialog) => { if (strikesBack) rewireAspect(dialog, targetActor); },
+    render: (event, dialog) => {
+      if (strikesBack) rewireAspect(dialog, targetActor);
+      if (blockWithArmor) rewireBlockChoice(dialog);
+    },
     ok: {
       label: L(defense),
       callback: (e, b) => ({
         weaponId: b.form.elements.weapon?.value ?? "",
+        armorLocationId: b.form.elements.armor?.value ?? "",
         aspect: b.form.elements.aspect?.value ?? "",
         modifier: b.form.elements.modifier ? readModifier(b.form) : 0
       })
     },
     rejectClose: false
   });
+  // A melee block needs a weapon or an armor location.
+  if (answer && blockWithArmor && !answer.weaponId && !answer.armorLocationId) {
+    ui.notifications.warn(L("chooseBlock"));
+    return null;
+  }
+  return answer;
 }

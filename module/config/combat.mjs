@@ -99,6 +99,9 @@ export const FATIGUE_ROUND_INTERVAL = 5;
 export const WQ_TEST_FORMULA = "3d6";
 /** A blocked missile only makes the shield test when it hit with at least this Impact. */
 export const BLOCK_CLASH_MIN_IMPACT = 5;
+
+/** The combat skill a block with armor (no weapon) rolls against: its ESL plus the actor's melee defense modifier, without the Defense and specialization of a weapon (helpers/combat/lookup.mjs armorBlockDsl). */
+export const ARMOR_BLOCK_SKILL = "close";
 /** A shield that rolled above its WQ loses this much WQ, never below SHIELD_MIN_WQ (0 is the body-part sentinel). */
 export const SHIELD_WEAR_STEP = 1;
 export const SHIELD_MIN_WQ = 1;

@@ -1,6 +1,6 @@
 /** Skill and weapon lookups: ESL, attack/defense skill levels, aspects, body parts and shields. */
 
-import { COMBAT_SKILLS } from "../../config/index.mjs";
+import { COMBAT_SKILLS, ARMOR_BLOCK_SKILL } from "../../config/index.mjs";
 import { rangedBlockShields, effectiveStat } from "../../rules/index.mjs";
 import { outnumberedPenalty } from "../../data/base-actor-schema.mjs";
 import { ALL_ASPECTS } from "./constants.mjs";
@@ -26,6 +26,9 @@ export const weaponAsl = (actor, w) => combatSkillEsl(actor, w.system.associated
 
 /** A weapon's Defense Skill Level: the combat skill's ESL + the weapon's defense and specialization + the actor's melee defense modifier. */
 export const weaponDsl = (actor, w) => combatSkillEsl(actor, w.system.associatedSkill) + effectiveStat(w.system, "defense") + w.system.specialization + (actor.system.mods?.meleeDefense ?? 0);
+
+/** The Defense Skill Level of blocking with armor, no weapon: the combat skill's ESL + the actor's melee defense modifier. */
+export const armorBlockDsl = (actor) => combatSkillEsl(actor, ARMOR_BLOCK_SKILL) + (actor.system.mods?.meleeDefense ?? 0);
 
 /** A missile's ASL before range, aim, the dialog modifier and the target's status. Shown on the sheet and rolled in attack.mjs. */
 export const missileAsl = (actor, m) => combatSkillEsl(actor, m.system.associatedSkill) + (m.system.specialization ?? 0) + (actor.system.mods?.missileAttack ?? 0);

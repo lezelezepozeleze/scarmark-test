@@ -1,7 +1,7 @@
 /** Running the actions of an item: "when <trigger> add <effect> on <target>", "roll <test>", "repair / improve <item>" or "send <message>". Using a usable item sets off its "used" actions, opening the sheet of an item the character carries its "inspected" ones, consuming a consumable its "consumed" ones (helpers/consume.mjs). Using and consuming always say so in the chat (announce). */
-import { ACTION_TARGET_SELECTED_TOKEN, ACTION_TARGET_SELF, ACTION_TRIGGER_USED, ACTION_TRIGGER_INSPECTED, ACTION_TRIGGERS, ACTION_ALTERATIONS, ACTION_ALTER_REPAIR, ATTRIBUTES, ATTRIBUTE_TEST_MULTIPLIER } from "../config/index.mjs";
+import { ACTION_TARGET_SELECTED_TOKEN, ACTION_TARGET_SELF, ACTION_TRIGGER_USED, ACTION_TRIGGER_INSPECTED, ACTION_TRIGGERS, ALTERABLE_ITEM_TYPES, ALTERATION_REPAIR, ATTRIBUTES, ATTRIBUTE_TEST_MULTIPLIER } from "../config/index.mjs";
 import { FLAGS } from "../constants.mjs";
-import { actionsFor, isEffectAction, isTestAction, isAlterAction, isMessageAction, usesEffect, parseActionTest, ownedEffectChanges, armorRepairProblem, repairedArmor, isTimedDuration, capTarget } from "../rules/index.mjs";
+import { actionsFor, isEffectAction, isTestAction, isAlterAction, isMessageAction, parseActionTest, ownedEffectChanges, armorRepairProblem, repairedArmor, isTimedDuration, capTarget } from "../rules/index.mjs";
 import { esc } from "./escape.mjs";
 import { stampEffectData, currentWorldTime, copyLibraryEffect } from "./effect-library.mjs";
 import { rollD100Test } from "./dice/shared.mjs";
@@ -106,17 +106,18 @@ async function forEachAction(item, trigger, kind, handler) {
   return count;
 }
 
-/** The marker of an effect an "improve" put on an item: where it came from (the library effect, else the effect of the improving item), so one source cannot improve an item twice. */
-const sourceOf = (effect) => effect.getFlag(FLAGS.scope, FLAGS.librarySource) ?? effect.uuid;
-
 /** Why an armor repair was refused: problem key -> lang key ({target}). */
 const ARMOR_PROBLEM_MESSAGE = {
   natural: "SCARMARK.Action.noArmorWear",
   noCoverage: "SCARMARK.Action.noArmorCoverage"
 };
 
-/** Repair an armor piece: every location back to full, and the temporary modifiers it got from "improve" removed (permanent ones stay). */
+/** Repair an item: an armor piece has every location put back to full and the temporary modifiers of earlier alterations removed (permanent ones stay). Weapons cannot be repaired yet. Returns whether it was repaired. */
 async function repairItem(target) {
+  if (target.type !== "armor") {
+    warn("SCARMARK.Action.noWeaponRepair", { target: target.name });
+    return false;
+  }
   const problem = armorRepairProblem(target._source.system);
   if (problem) {
     warn(ARMOR_PROBLEM_MESSAGE[problem], { target: target.name });
@@ -128,29 +129,22 @@ async function repairItem(target) {
   return true;
 }
 
-/** Improve an item: a copy of the effect of `item` the action names goes onto the target as a modifier (timed if the effect has a duration). Refused when the target already has an effect from the same source. Returns the effect added, or null. */
-async function improveItem(item, target, action) {
-  const effect = item.effects.get(action.effect);
-  if (!effect) {
-    warn("SCARMARK.Action.effectMissing", { item: item.name });
-    return null;
+/** Put an alteration (an effect of an alteration compendium) on an item as a modifier, timed if the effect has a duration. The copy remembers its compendium entry, and one entry cannot alter an item twice. Returns whether it was put on. */
+async function alterItem(item, target, entry) {
+  if (target.effects.some(existing => existing.getFlag(FLAGS.scope, FLAGS.improvedBy) === entry.uuid)) {
+    warn("SCARMARK.Action.alreadyHasEffect", { target: target.name, effect: entry.name });
+    return false;
   }
-  const source = sourceOf(effect);
-  if (target.effects.some(existing => existing.getFlag(FLAGS.scope, FLAGS.improvedBy) === source)) {
-    warn("SCARMARK.Action.alreadyHasEffect", { target: target.name, effect: effect.name });
-    return null;
-  }
-  const data = stampEffectData(effect.toObject(), { now: currentWorldTime(), origin: item.uuid });
+  const data = stampEffectData(entry.toObject(), { now: currentWorldTime(), origin: item.uuid });
   data.transfer = false;
-  const scope = { ...(data.flags?.[FLAGS.scope] ?? {}), [FLAGS.improvedBy]: source };
-  delete scope[FLAGS.librarySource];
-  delete scope[FLAGS.ownedByAction];
+  const scope = { ...(data.flags?.[FLAGS.scope] ?? {}), [FLAGS.improvedBy]: entry.uuid };
+  delete scope[FLAGS.alteration];
   data.flags = { ...(data.flags ?? {}), [FLAGS.scope]: scope };
   await target.createEmbeddedDocuments("ActiveEffect", [data]);
-  return effect;
+  return true;
 }
 
-/** Do the "repair" and "improve" actions of `item` that fire on `trigger`, on items of the carrying character, and post a public card for each. Problems are reported to the user and the action is skipped. Returns how many items were altered. */
+/** Do the "alter" actions of `item` that fire on `trigger`: each repairs or modifies an item of the carrying character, and posts a public card. Problems are reported to the user and the action is skipped. Returns how many items were altered. */
 function alterItems(item, trigger) {
   return forEachAction(item, trigger, isAlterAction, async (action, owner) => {
     const target = owner.items.get(action.targetItem);
@@ -158,15 +152,14 @@ function alterItems(item, trigger) {
       warn("SCARMARK.Action.noTargetItem");
       return false;
     }
-    const alteration = ACTION_ALTERATIONS[action.alteration];
-    if (!alteration || !alteration.itemTypes.includes(target.type)) {
-      warn("SCARMARK.Action.wrongItemType", { target: target.name });
+    const entry = ALTERABLE_ITEM_TYPES.includes(target.type) ? await fromUuid(action.alteration) : null;
+    if (!entry) {
+      warn(ALTERABLE_ITEM_TYPES.includes(target.type) ? "SCARMARK.Action.alterationMissing" : "SCARMARK.Action.wrongItemType", { item: item.name, target: target.name });
       return false;
     }
-    const repairing = action.alteration === ACTION_ALTER_REPAIR;
-    const effect = repairing ? null : await improveItem(item, target, action);
-    if (repairing ? !await repairItem(target) : !effect) return false;
-    await say(owner, alteration.card, { actor: owner.name, item: item.name, target: target.name, effect: effect?.name });
+    const repairing = entry.getFlag(FLAGS.scope, FLAGS.alteration) === ALTERATION_REPAIR;
+    if (!(repairing ? await repairItem(target) : await alterItem(item, target, entry))) return false;
+    await say(owner, repairing ? "SCARMARK.Action.cardRepair" : "SCARMARK.Action.cardAlter", { actor: owner.name, item: item.name, target: target.name, effect: entry.name });
     return true;
   });
 }
@@ -207,27 +200,27 @@ async function rollTest(actor, action) {
 const rollTests = (item, trigger) => forEachAction(item, trigger, isTestAction, (action, actor) => rollTest(actor, action));
 
 /**
- * Set off the actions of `item` that fire on `trigger`: the effects first, then the item alterations, the messages and the tests.
+ * Set off the actions of `item` that fire on `trigger`, in this order: the effects (each posts "<actor> used <item>. <target> is now <effect>"), the messages (same start), then, when no card said "<actor> used <item>" yet, that plain line (config/actions.mjs `announce`: used and consumed have one), then the item alterations, and the tests last, so a test always comes after the card that says what the character did.
  *
  * @param {object} [options]
  * @param {(plan: object[]) => void} [options.adjustPlan] called with the effects about to be added, before they are (consuming adds the toxicity)
- * @returns {Promise<{done: number, announced: boolean}>} how many things were done, and whether a card already said "<actor> used <item>" (effect and message cards do)
+ * @returns {Promise<number>} how many things were done
  */
 export async function runActions(item, trigger, { adjustPlan } = {}) {
   const plan = await planActions(item, trigger);
   adjustPlan?.(plan);
   const { applied, cards } = await applyPlan(plan);
-  const altered = await alterItems(item, trigger);
   const sent = await sendMessages(item, trigger);
+  if (cards + sent === 0) await announce(item, trigger);
+  const altered = await alterItems(item, trigger);
   const rolled = await rollTests(item, trigger);
-  return { done: applied + altered + sent + rolled, announced: cards + sent > 0 };
+  return applied + sent + altered + rolled;
 }
 
-/** Use an item: set off its "when used" actions, and say in the chat that it was used (unless an action card already did). */
+/** Use an item: set off its "when used" actions; the chat says it was used. */
 export async function useItem(item) {
   try {
-    const { announced } = await runActions(item, ACTION_TRIGGER_USED);
-    if (!announced) await announce(item, ACTION_TRIGGER_USED);
+    await runActions(item, ACTION_TRIGGER_USED);
   } catch (err) {
     console.error("Scarmark | use failed", err);
     ui.notifications.error(game.i18n.format("SCARMARK.Gear.useFailed", { error: err.message }));
@@ -263,7 +256,7 @@ export async function materializeActionEffects(item) {
   const actions = (item.system.actions ?? []).map(action => ({ ...action }));
   let changed = 0;
   for (const action of actions) {
-    if (!usesEffect(action) || !String(action.effect ?? "").startsWith("Compendium.")) continue;
+    if (!isEffectAction(action) || !String(action.effect ?? "").startsWith("Compendium.")) continue;
     const source = action.effect;
     const copy = item.effects.find(effect => effect.getFlag(FLAGS.scope, FLAGS.librarySource) === source) ?? await copyLibraryEffect(item, source);
     if (!copy) {

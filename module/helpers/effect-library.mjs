@@ -1,7 +1,7 @@
 /**
  * The effect library: every standalone Active Effect compendium of this system (alcohol, hangovers, potion sickness, combat poisonings, outnumbered ...). The Add button of the actor Effects tab lists them, and picking one puts a stamped copy on the actor - the same stamp Consume uses.
  */
-import { SYSTEM_ID, FLAGS } from "../constants.mjs";
+import { SYSTEM_ID, FLAGS, PACKS, ALTERATION_PACKS } from "../constants.mjs";
 import { durationSeconds } from "../rules/index.mjs";
 
 /**
@@ -27,9 +27,9 @@ export function currentWorldTime() {
   try { return game.time?.worldTime ?? null; } catch { return null; }
 }
 
-/** The effect packs of this system: [{ label, entries: [{ uuid, name, img }] }], packs and entries sorted by name. */
+/** The effect packs of this system (not the alteration compendia): [{ label, entries: [{ uuid, name, img }] }], packs and entries sorted by name. */
 export async function listEffectLibrary() {
-  const packs = game.packs.filter(p => p.documentName === "ActiveEffect" && p.metadata.packageName === SYSTEM_ID);
+  const packs = game.packs.filter(p => p.documentName === "ActiveEffect" && p.metadata.packageName === SYSTEM_ID && !Object.values(ALTERATION_PACKS).includes(p.collection));
   const groups = [];
   for (const pack of packs) {
     const index = await pack.getIndex();
@@ -61,4 +61,48 @@ export async function copyLibraryEffect(document, uuid) {
   data.transfer = false;
   data.flags = { ...(data.flags ?? {}), [FLAGS.scope]: { ...(data.flags?.[FLAGS.scope] ?? {}), [FLAGS.librarySource]: uuid } };
   return createEffect(document, data);
+}
+
+/** The data of an effect as the library keeps it: no id, origin or countdown, enabled, not transferring, and none of the flags that tie it to an item. Pure: returns a new object. */
+export function libraryEntryData(source) {
+  const data = structuredClone(source);
+  for (const key of ["_id", "origin", "start"]) delete data[key];
+  data.disabled = false;
+  data.transfer = false;
+  if (data.flags) delete data.flags[FLAGS.scope];
+  return data;
+}
+
+/** Run `work(pack)` with the effect library pack writable: a locked pack is unlocked for the work and locked again. Only the GM can; null for anyone else or when the pack is missing. */
+async function withLibraryPack(work) {
+  const pack = game.user.isGM ? game.packs.get(PACKS.effects) : null;
+  if (!pack) return null;
+  const wasLocked = pack.locked;
+  if (wasLocked) await pack.configure({ locked: false });
+  try {
+    return await work(pack);
+  } finally {
+    if (wasLocked) await pack.configure({ locked: true });
+  }
+}
+
+/**
+ * Submit an effect to the effect library (the Effects compendium), as it is saved now, so every item and actor can use it: a new entry, or, when the effect is already linked to an entry (submitted before, or copied from the library), an update of that entry. The effect is linked to its entry (an action that picks the entry finds the item's own effect instead of copying it again). Only the GM can write to the compendium.
+ *
+ * @returns {Promise<object|null>} the library entry, or null when it was not saved
+ */
+export async function submitEffectToLibrary(effect) {
+  const uuid = effect.getFlag(FLAGS.scope, FLAGS.librarySource);
+  const data = libraryEntryData(effect.toObject());
+  const entry = await withLibraryPack(async (pack) => {
+    const existing = uuid ? await fromUuid(uuid) : null;
+    return existing ? existing.update(data, { diff: false }) : ActiveEffect.implementation.create(data, { pack: pack.collection });
+  });
+  if (!entry) {
+    ui.notifications.warn(game.i18n.format("SCARMARK.Effect.libraryNotSaved", { name: effect.name }));
+    return null;
+  }
+  if (entry.uuid !== uuid) await effect.setFlag(FLAGS.scope, FLAGS.librarySource, entry.uuid);
+  ui.notifications.info(game.i18n.format("SCARMARK.Effect.librarySubmitted", { name: effect.name }));
+  return entry;
 }

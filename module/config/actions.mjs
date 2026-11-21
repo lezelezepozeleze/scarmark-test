@@ -1,7 +1,7 @@
 /** The roll-downs of the Actions panel (sheets/actions/action-panel.mjs) and the keys the action runner (helpers/item-actions.mjs) acts on. Pure data.
  * Each option is { label, requires }: the lang key, and the data path of a flag of the document that must be ticked for the option to be offered (null = always). An option a saved action already uses stays in its roll-down even when the flag is later unticked, so nothing is silently lost. */
 
-/** "do": what an action does: add an effect, roll a test, alter an item, or send a chat message. An action without a kind is an "add effect" action (the first actions had no kind). */
+/** "do": what an action does: add an effect, roll a test, alter an item of the character, or send a chat message. An action without a kind is an "add effect" action (the first actions had no kind). */
 export const ACTION_KIND_EFFECT = "effect";
 export const ACTION_KIND_TEST = "test";
 export const ACTION_KIND_ALTER = "alter";
@@ -14,16 +14,10 @@ export const ACTION_KINDS = {
 };
 
 /**
- * The ways to alter an item: stored key -> { label, itemTypes, needsEffect, card }. `itemTypes` are the kinds of item of the carrying character the picker offers; `needsEffect`: the action also names an effect (improve puts a copy of it on the item); `card` is the public chat card ({item} {target} {effect}).
- *   repair   the wear goes back to full (armor: every location to the original durability) and the temporary modifiers the item got from "improve" are removed; permanent ones stay
- *   improve  a copy of the effect is put on the item as a modifier (once per source: an item that already has an effect from the same source is refused)
+ * "alter": an action that changes an item of the carrying character. The roll-down lists the items of ALTERABLE_ITEM_TYPES in its inventory, then the alterations of that kind of item from its compendium (constants.mjs ALTERATION_PACKS). An alteration is an Active Effect in that compendium: the entry flagged ALTERATION_REPAIR repairs the item (wear back to full, the temporary modifiers of earlier alterations removed, permanent ones stay); any other is put on the item as a modifier (permanent, or timed if it has a duration), once per entry: an item that already has an effect from the same entry is refused.
  */
-export const ACTION_ALTER_REPAIR = "repair";
-export const ACTION_ALTER_IMPROVE = "improve";
-export const ACTION_ALTERATIONS = {
-  [ACTION_ALTER_REPAIR]: { label: "SCARMARK.Action.alterRepair", itemTypes: ["armor"], needsEffect: false, card: "SCARMARK.Action.cardRepair" },
-  [ACTION_ALTER_IMPROVE]: { label: "SCARMARK.Action.alterImprove", itemTypes: ["armor", "weapon"], needsEffect: true, card: "SCARMARK.Action.cardImprove" }
-};
+export const ALTERABLE_ITEM_TYPES = ["armor", "weapon"];
+export const ALTERATION_REPAIR = "repair";
 
 /** The stats an effect on a weapon or armor can modify. The effect change key is ITEM_MOD_KEY_PREFIX + the stat (e.g. "system.itemMods.impact.edged"), type add; the item sums them (rules/item-mods.mjs) into system.effective, which combat reads. The stored fields are never changed. */
 export const ITEM_MOD_KEY_PREFIX = "system.itemMods.";

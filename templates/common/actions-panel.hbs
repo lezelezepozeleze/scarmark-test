@@ -1,4 +1,4 @@
-{{!-- The Actions panel: one "when <trigger> <do> ..." row per action, with the Add link. Parameter: panel - the view model from prepareActionsPanel (sheets/actions/action-panel.mjs). Not tied to item sheets: the data path comes from panel.path. What follows "do" depends on it: an effect (and "on" for a trigger that asks for a target), a test, an alteration with its item (and the effect of an improve), or a message text. --}}
+{{!-- The Actions panel: one "when <trigger> <do> ..." row per action, with the Add link. Parameter: panel - the view model from prepareActionsPanel (sheets/actions/action-panel.mjs). Not tied to item sheets: the data path comes from panel.path. What follows "do" depends on it: an effect (and "on" for a trigger that asks for a target), a test, an alter (the item, then its alteration), or a message text. --}}
 <div class="actions-panel" data-actions-path="{{panel.path}}">
   <div class="actions-header">
     <a class="add-action" data-action="createAction">
@@ -16,9 +16,10 @@
       {{> "systems/scarmark-test/templates/common/roll-down.hbs" field=row.test cls="action-test"}}
       {{/if}}
       {{#if row.isAlter}}
+      {{> "systems/scarmark-test/templates/common/roll-down.hbs" field=row.targetItem cls="action-item"}}
       {{> "systems/scarmark-test/templates/common/roll-down.hbs" field=row.alteration cls="action-alteration"}}
       {{/if}}
-      {{#if row.showEffect}}
+      {{#if row.isEffect}}
       {{> "systems/scarmark-test/templates/common/roll-down.hbs" field=row.effect cls="action-effect"}}
       {{/if}}
       {{#if row.isMessage}}
@@ -27,10 +28,6 @@
       {{#if row.showOn}}
       <span class="action-word">{{localize 'SCARMARK.Action.on'}}</span>
       {{> "systems/scarmark-test/templates/common/roll-down.hbs" field=row.on cls="action-on"}}
-      {{/if}}
-      {{#if row.showItem}}
-      <span class="action-word">{{localize 'SCARMARK.Action.on'}}</span>
-      {{> "systems/scarmark-test/templates/common/roll-down.hbs" field=row.targetItem cls="action-item"}}
       {{/if}}
       <a class="action-delete" data-action="deleteAction" title="{{localize 'SCARMARK.Delete'}}"><i class="fa-solid fa-trash"></i></a>
     </li>

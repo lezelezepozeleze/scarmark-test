@@ -3,18 +3,19 @@
  *   1. give the data model the field: `actions: actionsField()` (data/shared-fields.mjs), or any other path;
  *   2. wrap the sheet class: `class MySheet extends ActionsPanelMixin(HandlebarsApplicationMixin(DocumentSheetV2))` (adds the click actions and context.actionsPanel);
  *   3. put `{{> "systems/scarmark-test/templates/common/actions-panel.hbs" panel=actionsPanel}}` in a template (tab, section, dialog) and list ACTIONS_PANEL_TEMPLATES in that part's `templates`.
- * The panel finds its data path from the markup (data-actions-path), so several panels, each with its own path, can live on one sheet (give each its own context key: prepareActionsPanel(document, path, { library, tests })).
+ * The panel finds its data path from the markup (data-actions-path), so several panels, each with its own path, can live on one sheet (give each its own context key: prepareActionsPanel(document, path, { library, tests, alterations })).
  * The "do" roll-down chooses what the action does:
  *   add effect    an effect (the item's own, or any of the effect library; a library effect that an action picks is copied onto the item, helpers/item-actions.mjs materializeActionEffects, so the Effects tab lists everything the actions use), on self or the selected tokens
  *   roll test     an attribute or skill test of the carrying character (helpers/action-tests.mjs)
- *   alter         repair or improve an armor piece or weapon of the carrying character (improve also names an effect)
+ *   alter         an armor piece or weapon of the carrying character, then one alteration from the compendium of that kind of item (helpers/alterations.mjs)
  *   send message  a text posted to the chat
  * The "when" and "on" roll-downs come from config/actions.mjs: an option can require a flag of the document (e.g. "Consumed" needs system.consumable), so the lists follow the item's checkboxes, and "on" is only shown for a trigger that asks for a target.
  */
 import { TEMPLATE_DIR } from "../../constants.mjs";
-import { ACTION_TARGETS, ACTION_TRIGGERS, ACTION_KINDS, ACTION_KIND_EFFECT, ACTION_KIND_TEST, ACTION_KIND_ALTER, ACTION_KIND_MESSAGE, ACTION_ALTERATIONS } from "../../config/index.mjs";
+import { ACTION_TARGETS, ACTION_TRIGGERS, ACTION_KINDS, ACTION_KIND_EFFECT, ACTION_KIND_TEST, ACTION_KIND_ALTER, ACTION_KIND_MESSAGE, ALTERABLE_ITEM_TYPES } from "../../config/index.mjs";
 import { listEffectLibrary } from "../../helpers/effect-library.mjs";
 import { listActionTests } from "../../helpers/action-tests.mjs";
+import { listAlterations } from "../../helpers/alterations.mjs";
 
 export const ACTIONS_PANEL_TEMPLATE = `${TEMPLATE_DIR}common/actions-panel.hbs`;
 
@@ -55,21 +56,22 @@ function groupedRollDown(name, value, groups) {
  * @param {object} [lists]
  * @param {{label: string, entries: {uuid: string, name: string}[]}[]} [lists.library] the effect library (listEffectLibrary)
  * @param {{label: string, options: {value: string, label: string}[]}[]} [lists.tests] the test groups (listActionTests)
+ * @param {Object<string, {uuid: string, name: string}[]>} [lists.alterations] item type -> its alterations (listAlterations)
  * @returns {{path: string, rows: object[]}}
  */
-export function prepareActionsPanel(document, path = DEFAULT_ACTIONS_PATH, { library = [], tests = [] } = {}) {
+export function prepareActionsPanel(document, path = DEFAULT_ACTIONS_PATH, { library = [], tests = [], alterations = {} } = {}) {
   const own = Array.from(document.effects ?? []).map(effect => ({ value: effect.id, label: effect.name }));
   const effectGroups = [
     ...(own.length ? [{ label: game.i18n.localize("SCARMARK.Action.thisItem"), options: own }] : []),
     ...library.map(group => ({ label: group.label, options: group.entries.map(entry => ({ value: entry.uuid, label: entry.name })) }))
   ];
   const inventory = Array.from(inventoryOf(document));
+  const alterable = inventory.filter(item => ALTERABLE_ITEM_TYPES.includes(item.type)).map(item => ({ value: item.id, label: item.name }));
   const data = document._source ?? document;
   const offered = (table, current) => Object.entries(table)
     .filter(([key, option]) => !option.requires || readPath(data, option.requires) || key === current)
     .map(([value, option]) => ({ value, label: game.i18n.localize(option.label) }));
   const kindOptions = Object.entries(ACTION_KINDS).map(([value, kind]) => ({ value, label: game.i18n.localize(kind.label) }));
-  const alterationOptions = Object.entries(ACTION_ALTERATIONS).map(([value, change]) => ({ value, label: game.i18n.localize(change.label) }));
   const rows = storedActions(document, path).map((action, index) => {
     const prefix = `${path}.${index}`;
     const kind = action.kind || ACTION_KIND_EFFECT;
@@ -77,9 +79,9 @@ export function prepareActionsPanel(document, path = DEFAULT_ACTIONS_PATH, { lib
     const isAlter = kind === ACTION_KIND_ALTER;
     const isMessage = kind === ACTION_KIND_MESSAGE;
     const isEffect = !isTest && !isAlter && !isMessage;
-    const alteration = ACTION_ALTERATIONS[action.alteration];
-    // An alter action lists only the items its alteration works on (armor for a repair).
-    const itemOptions = inventory.filter(item => !alteration || alteration.itemTypes.includes(item.type)).map(item => ({ value: item.id, label: item.name }));
+    // The alterations on offer are the ones of the kind of item picked.
+    const picked = inventory.find(item => item.id === action.targetItem);
+    const alterationOptions = (alterations[picked?.type] ?? []).map(entry => ({ value: entry.uuid, label: entry.name }));
     return {
       prefix,
       id: action.id,
@@ -90,14 +92,12 @@ export function prepareActionsPanel(document, path = DEFAULT_ACTIONS_PATH, { lib
       isMessage,
       isEffect,
       test: groupedRollDown(`${prefix}.test`, action.test, tests),
+      targetItem: rollDown(`${prefix}.targetItem`, action.targetItem, alterable),
       alteration: rollDown(`${prefix}.alteration`, action.alteration, alterationOptions),
-      showEffect: isEffect || (isAlter && Boolean(alteration?.needsEffect)),
       effect: groupedRollDown(`${prefix}.effect`, action.effect, effectGroups),
       message: { name: `${prefix}.message`, value: action.message ?? "" },
       showOn: isEffect && ACTION_TRIGGERS[action.when]?.target === true,
-      on: rollDown(`${prefix}.on`, action.on, offered(ACTION_TARGETS, action.on)),
-      showItem: isAlter,
-      targetItem: rollDown(`${prefix}.targetItem`, action.targetItem, itemOptions)
+      on: rollDown(`${prefix}.on`, action.on, offered(ACTION_TARGETS, action.on))
     };
   });
   return { path, rows };
@@ -132,7 +132,7 @@ export const ActionsPanelMixin = (Base) => class extends Base {
   /** @override */
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
-    context.actionsPanel = prepareActionsPanel(this.document, DEFAULT_ACTIONS_PATH, { library: await listEffectLibrary(), tests: await listActionTests() });
+    context.actionsPanel = prepareActionsPanel(this.document, DEFAULT_ACTIONS_PATH, { library: await listEffectLibrary(), tests: await listActionTests(), alterations: await listAlterations() });
     return context;
   }
 };

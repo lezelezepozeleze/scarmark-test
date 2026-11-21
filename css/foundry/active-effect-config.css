@@ -6,3 +6,10 @@
   margin-bottom: 3px;
   font-size: 0.85rem;
 }
+
+/* Submit / Save to the library buttons above the footer of the Active Effect config (outside .scarmark). */
+.scarmark-library-buttons {
+  display: flex;
+  gap: 6px;
+  margin: 6px 0;
+}

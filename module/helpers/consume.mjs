@@ -1,6 +1,6 @@
 /** Consuming an item: its Active Effects (plus its toxicity) go onto the actor with their countdown started, and one unit is spent. */
 import { TOXICITY_SKILL, ACTION_TRIGGER_CONSUMED, ACTION_TARGET_SELF } from "../config/index.mjs";
-import { durationSeconds, actionsFor } from "../rules/index.mjs";
+import { durationSeconds } from "../rules/index.mjs";
 import { stampEffectData, currentWorldTime } from "./effect-library.mjs";
 import { runActions, announce } from "./item-actions.mjs";
 
@@ -21,39 +21,32 @@ export function withToxicity(effects, { toxicity, name, img, uuid }) {
 }
 
 /**
- * Fold the toxicity into the effects an item's "consumed" actions are about to put on the consumer (the longest-lasting one, see withToxicity). Returns whether there was one to fold it into.
+ * Add the toxicity to what the item's "consumed" actions are about to put on the consumer: into the longest-lasting effect that lands on the consumer (see withToxicity), or, when no action puts one there, as an effect of its own (permanent, no card). It is in the plan, so it is on before the tests of the actions roll.
  */
-function mergeToxicity(plan, info) {
+function addToxicity(plan, actor, info) {
   const own = plan.filter(entry => entry.on === ACTION_TARGET_SELF).map(entry => entry.data);
-  if (own.length) withToxicity(own, info);
-  return own.length > 0;
-}
-
-/** The toxicity as an effect of its own, permanent, for a consumable whose actions put no effect on the consumer. */
-async function applyStandaloneToxicity(actor, info) {
+  if (own.length) {
+    withToxicity(own, info);
+    return;
+  }
   const [effect] = withToxicity([], info);
-  if (effect) await actor.createEmbeddedDocuments("ActiveEffect", [effect]);
+  if (effect) plan.push({ on: ACTION_TARGET_SELF, data: effect, targets: [actor], silent: true });
 }
 
 /**
- * Consume one unit of a consumable, and say so in the chat ("<actor> consumed <item>.", unless an action card already did). An item with actions is consumed by them (only its "consumed" ones fire, the toxicity goes into the longest-lasting effect they add, or is a permanent effect of its own); an older consumable with none puts all its effects on the consumer. When "consumed" actions exist but none could run, nothing is spent. Errors are reported to the user, not thrown.
+ * Consume one unit of a consumable, and say so in the chat ("<actor> consumed <item>."). An item with actions is consumed by them (only its "consumed" ones fire, see runActions); an older consumable with none puts all its effects on the consumer. The unit is spent whatever the actions did; what could not be done is reported. Errors are reported to the user, not thrown.
  */
 export async function consumeItem(actor, item) {
   const now = currentWorldTime();
   const info = { toxicity: Number(item.system.toxicity) || 0, name: item.name, img: item.img, uuid: item.uuid };
   const buildEffects = () => withToxicity(item.effects.contents.map(e => stampEffectData(e.toObject(), { now, origin: item.uuid })), info);
   try {
-    let announced = false;
     if ((item.system.actions?.length ?? 0) > 0) {
-      let merged = false;
-      const result = await runActions(item, ACTION_TRIGGER_CONSUMED, { adjustPlan: (plan) => { merged = mergeToxicity(plan, info); } });
-      if (!result.done && actionsFor(item.system.actions, ACTION_TRIGGER_CONSUMED).length) return;
-      if (!merged) await applyStandaloneToxicity(actor, info);
-      announced = result.announced;
+      await runActions(item, ACTION_TRIGGER_CONSUMED, { adjustPlan: (plan) => addToxicity(plan, actor, info) });
     } else {
       await applyOwnEffects(actor, buildEffects);
+      await announce(item, ACTION_TRIGGER_CONSUMED);
     }
-    if (!announced) await announce(item, ACTION_TRIGGER_CONSUMED);
     const quantity = item.system.quantity ?? 1;
     if (quantity > 1) await item.update({ "system.quantity": quantity - 1 });
     else await item.delete();

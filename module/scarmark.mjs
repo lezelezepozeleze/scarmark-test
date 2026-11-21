@@ -11,6 +11,7 @@ import { registerItemHooks } from "./foundry/item-hooks.mjs";
 import { registerChatHooks } from "./foundry/chat-hooks.mjs";
 import { registerEffectExpiry, startEffectExpiry } from "./foundry/effect-expiry.mjs";
 import { registerEffectKeyPicker, cacheSkillNames } from "./foundry/effect-key-picker.mjs";
+import { registerEffectLibraryButtons } from "./foundry/effect-library-buttons.mjs";
 import { registerScarmarkCombatant, registerScarmarkQueries, initiateAttack, declareMeleeAttack, initiateRangeAttack, declareRangeAttack, rollStunTest } from "./helpers/combat.mjs";
 import { registerScarmarkStatusEffects } from "./helpers/statuses.mjs";
 import { skillTest, attributeTest, initiatePsionicTalent } from "./helpers/dice.mjs";
@@ -50,6 +51,7 @@ Hooks.once("ready", async () => {
 // Hooks that are registered as soon as the module loads (before init).
 registerEffectExpiry();
 registerEffectKeyPicker();
+registerEffectLibraryButtons();
 registerActorHooks();
 registerItemHooks();
 registerChatHooks();

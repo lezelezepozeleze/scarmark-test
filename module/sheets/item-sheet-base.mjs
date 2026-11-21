@@ -9,9 +9,10 @@ import { itemTabs, headerPart, tabsPart, effectsPart, actionsPart } from "./item
 const { HandlebarsApplicationMixin } = foundry.applications.api;
 const { ItemSheetV2 } = foundry.applications.sheets;
 
-/** Add a blank Active Effect to the item. */
+/** Add a blank Active Effect to the item. On a sheet with an Actions tab it is a catalog entry: it does not transfer to the owner (an "owned" action does that). A sheet without one (the trait) gets the plain effect. */
 function onCreateEffect() {
-  this.document.createEmbeddedDocuments("ActiveEffect", [blankEffectData()]);
+  const catalog = this.constructor.TABS?.primary?.tabs?.some(tab => tab.id === "actions");
+  this.document.createEmbeddedDocuments("ActiveEffect", [catalog ? { ...blankEffectData(), transfer: false } : blankEffectData()]);
 }
 
 /** Open the effect of this row. */

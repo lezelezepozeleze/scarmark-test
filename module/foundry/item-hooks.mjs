@@ -1,4 +1,4 @@
-/** Hooks on items: a library effect that an action picks is copied onto the item, and an "owned" action makes its effect transfer to the owner (helpers/item-actions.mjs). */
+/** Hooks on items: a library effect that an action picks is copied onto the item, an "owned" action makes its effect transfer to the owner (helpers/item-actions.mjs). */
 import { materializeActionEffects, syncOwnedEffects } from "../helpers/item-actions.mjs";
 
 /** Register the item hooks (called when the module loads). */

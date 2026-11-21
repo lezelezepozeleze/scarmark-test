@@ -78,3 +78,12 @@ export function resolveOutcome(aLevel, defense, dLevel, aRoll = 0, dRoll = 0) {
  * @returns {boolean}
  */
 export const isBlockResult = (aLevel, dLevel) => isSuccess(aLevel) && isSuccess(dLevel) && RANK[aLevel] === RANK[dLevel];
+
+/**
+ * Did the block turn the blow aside? The attack succeeded and the block succeeded at least as well, so the attacker does not strike. Blocking with armor, the blow is then not lost: it lands on the location the defender chose.
+ *
+ * @param {"cs"|"ms"|"mf"|"cf"} aLevel
+ * @param {"cs"|"ms"|"mf"|"cf"|null} dLevel
+ * @returns {boolean}
+ */
+export const blowBlocked = (aLevel, dLevel) => isSuccess(aLevel) && isSuccess(dLevel) && RANK[dLevel] >= RANK[aLevel];

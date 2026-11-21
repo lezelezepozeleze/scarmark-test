@@ -4,7 +4,7 @@ import { test } from "node:test";
 import assert from "node:assert";
 import { createRenderer } from "./support/render.mjs";
 import { prepareActionsPanel, ACTIONS_PANEL_TEMPLATE } from "../module/sheets/actions/action-panel.mjs";
-import { actionsFor, isTestAction, isAlterAction, isMessageAction, isEffectAction, usesEffect, parseActionTest, ownedEffectChanges } from "../module/rules/index.mjs";
+import { actionsFor, isTestAction, isAlterAction, isMessageAction, isEffectAction, parseActionTest, ownedEffectChanges } from "../module/rules/index.mjs";
 
 const { render } = createRenderer();
 const effects = [{ id: "e1", name: "Bless" }, { id: "e2", name: "Curse <x>" }];
@@ -44,32 +44,31 @@ test("prepareActionsPanel: the on roll-down (self, selected token) shows only fo
 test("prepareActionsPanel: the do roll-down has four kinds and defaults to add effect", () => {
   const row = panelOf({ effect: "e1" }, {}, { effects });
   assert.deepStrictEqual(row.kind.options.map(o => [o.value, o.selected]), [["effect", true], ["test", false], ["alter", false], ["message", false]]);
-  assert.deepStrictEqual([row.isEffect, row.isTest, row.isAlter, row.isMessage, row.showEffect], [true, false, false, false, true]);
+  assert.deepStrictEqual([row.isEffect, row.isTest, row.isAlter, row.isMessage], [true, false, false, false]);
   const message = panelOf({ kind: "message", message: "It smells of lavender." });
-  assert.deepStrictEqual([message.isMessage, message.showEffect, message.showOn, message.showItem], [true, false, false, false]);
+  assert.deepStrictEqual([message.isMessage, message.isEffect, message.showOn], [true, false, false]);
   assert.deepStrictEqual(message.message, { name: "system.actions.0.message", value: "It smells of lavender." });
 });
 
 test("prepareActionsPanel: a test action lists the tests instead of the effects", () => {
   const tests = [{ label: "Attributes", options: [{ value: "attribute:str", label: "Strength" }] }, { label: "Skills", options: [{ value: "skill:Vitality", label: "Vitality" }] }];
   const row = prepareActionsPanel({ effects, _source: { system: { consumable: true, actions: [action({ kind: "test", test: "skill:Vitality", when: "consumed" })] } } }, "system.actions", { tests }).rows[0];
-  assert.deepStrictEqual([row.isTest, row.showEffect], [true, false]);
+  assert.deepStrictEqual([row.isTest, row.isEffect], [true, false]);
   assert.deepStrictEqual(row.test.groups.map(g => [g.label, g.options.map(o => [o.value, o.selected])]), [["Attributes", [["attribute:str", false]]], ["Skills", [["skill:Vitality", true]]]]);
   assert.strictEqual(row.test.blankSelected, false);
 });
 
-test("prepareActionsPanel: an alter row lists the alterations and the items they work on; improve also shows the effect roll-down", () => {
-  const none = panelOf({ kind: "alter", when: "used" }, { usable: true }, { parent: owner, effects });
-  assert.deepStrictEqual([none.isAlter, none.showOn, none.showItem, none.showEffect], [true, false, true, false]);
-  assert.deepStrictEqual(values(none.alteration), ["", "repair", "improve"]);
-  assert.deepStrictEqual(values(none.targetItem), ["", "a1", "w1", "a2", "g1"]);
-  const repair = panelOf({ kind: "alter", when: "used", alteration: "repair", targetItem: "a2" }, { usable: true }, { parent: owner });
-  assert.deepStrictEqual(repair.targetItem.options.map(o => [o.value, o.selected]), [["", false], ["a1", false], ["a2", true]]);
-  assert.strictEqual(repair.showEffect, false);
-  const improve = panelOf({ kind: "alter", when: "used", alteration: "improve", effect: "e1", targetItem: "w1" }, { usable: true }, { parent: owner, effects });
-  assert.deepStrictEqual(values(improve.targetItem), ["", "a1", "w1", "a2"]);
-  assert.strictEqual(improve.showEffect, true);
-  assert.strictEqual(improve.effect.blankSelected, false);
+test("prepareActionsPanel: an alter row lists the armor and weapons of the carrying character, then the alterations of the kind of item picked", () => {
+  const alterations = { armor: [{ uuid: "Compendium.x.armor.ActiveEffect.r", name: "Repair" }, { uuid: "Compendium.x.armor.ActiveEffect.p", name: "Reinforced" }], weapon: [{ uuid: "Compendium.x.weapon.ActiveEffect.s", name: "Sharpened" }] };
+  const make = (fields) => prepareActionsPanel({ parent: owner, _source: { system: { usable: true, actions: [action({ kind: "alter", when: "used", ...fields })] } } }, "system.actions", { alterations }).rows[0];
+  const none = make({});
+  assert.deepStrictEqual([none.isAlter, none.showOn, none.isEffect], [true, false, false]);
+  assert.deepStrictEqual(values(none.targetItem), ["", "a1", "w1", "a2"]);
+  assert.deepStrictEqual(values(none.alteration), [""]);
+  const armor = make({ targetItem: "a2", alteration: "Compendium.x.armor.ActiveEffect.p" });
+  assert.deepStrictEqual(armor.alteration.options.map(o => [o.label, o.selected]), [["", false], ["Repair", false], ["Reinforced", true]]);
+  assert.deepStrictEqual(armor.targetItem.options.map(o => [o.value, o.selected]), [["", false], ["a1", false], ["w1", false], ["a2", true]]);
+  assert.deepStrictEqual(values(make({ targetItem: "w1" }).alteration), ["", "Compendium.x.weapon.ActiveEffect.s"]);
 });
 
 test("prepareActionsPanel: works at any path of any document (here a flag, no effects)", () => {
@@ -115,16 +114,16 @@ test("actions-panel partial: a test row shows the test roll-down only", () => {
   for (const field of ["effect", "on", "alteration", "message", "targetItem"]) assert.ok(!html.includes(`name="system.actions.0.${field}"`), field);
 });
 
-test("actions-panel partial: an alter row shows the alteration and the item (and the effect for improve); a message row shows the text", () => {
-  const improve = render(ACTIONS_PANEL_TEMPLATE, { panel: prepareActionsPanel({ parent: owner, effects, _source: { system: { usable: true, actions: [action({ kind: "alter", when: "used", alteration: "improve", effect: "e1", targetItem: "a1" })] } } }) });
-  for (const field of ["alteration", "effect", "targetItem"]) assert.ok(improve.includes(`name="system.actions.0.${field}"`), field);
-  assert.ok(improve.includes('<option value="a1" selected>Chainmail</option>'));
-  assert.ok(!improve.includes('name="system.actions.0.on"'));
-  const repair = render(ACTIONS_PANEL_TEMPLATE, { panel: prepareActionsPanel({ parent: owner, effects, _source: { system: { usable: true, actions: [action({ kind: "alter", when: "used", alteration: "repair", targetItem: "a1" })] } } }) });
-  assert.ok(repair.includes('name="system.actions.0.targetItem"') && !repair.includes('name="system.actions.0.effect"'));
+test("actions-panel partial: an alter row shows the item and its alteration; a message row shows the text", () => {
+  const alterations = { armor: [{ uuid: "Compendium.x.armor.ActiveEffect.r", name: "Repair" }] };
+  const alter = render(ACTIONS_PANEL_TEMPLATE, { panel: prepareActionsPanel({ parent: owner, effects, _source: { system: { usable: true, actions: [action({ kind: "alter", when: "used", targetItem: "a1", alteration: "Compendium.x.armor.ActiveEffect.r" })] } } }, "system.actions", { alterations }) });
+  for (const field of ["targetItem", "alteration"]) assert.ok(alter.includes(`name="system.actions.0.${field}"`), field);
+  assert.ok(alter.includes('<option value="a1" selected>Chainmail</option>') && alter.includes('<option value="Compendium.x.armor.ActiveEffect.r" selected>Repair</option>'));
+  assert.ok(alter.indexOf('name="system.actions.0.targetItem"') < alter.indexOf('name="system.actions.0.alteration"'));
+  for (const field of ["effect", "on", "test", "message"]) assert.ok(!alter.includes(`name="system.actions.0.${field}"`), field);
   const message = render(ACTIONS_PANEL_TEMPLATE, { panel: prepareActionsPanel({ _source: { system: { actions: [action({ kind: "message", when: "inspected", message: 'It "glows" <b>' })] } } }) });
   assert.ok(message.includes('name="system.actions.0.message" value="It &quot;glows&quot; &lt;b&gt;"'));
-  for (const field of ["effect", "on", "targetItem"]) assert.ok(!message.includes(`name="system.actions.0.${field}"`), field);
+  for (const field of ["effect", "on", "targetItem", "alteration"]) assert.ok(!message.includes(`name="system.actions.0.${field}"`), field);
 });
 
 test("actionsFor: only the actions of that trigger that name what they do", () => {
@@ -142,10 +141,9 @@ test("actionsFor: only the actions of that trigger that name what they do", () =
   assert.deepStrictEqual(messages.map(isMessageAction), [true, true, true]);
 });
 
-test("isEffectAction and usesEffect: an older action with no kind adds an effect; improve names one too", () => {
+test("isEffectAction: an older action with no kind adds an effect", () => {
   assert.strictEqual(isEffectAction(action({})), true);
   assert.deepStrictEqual([action({ kind: "test" }), action({ kind: "alter" }), action({ kind: "message" })].map(isEffectAction), [false, false, false]);
-  assert.deepStrictEqual([action({}), action({ kind: "alter", alteration: "improve" }), action({ kind: "alter", alteration: "repair" }), action({ kind: "message" }), action({ kind: "test" })].map(usesEffect), [true, true, false, false, false]);
 });
 
 test("ownedEffectChanges: an owned action makes its effect transfer; removing it undoes only what it did", () => {
