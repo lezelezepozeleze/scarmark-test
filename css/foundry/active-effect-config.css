@@ -13,3 +13,8 @@
   gap: 6px;
   margin: 6px 0;
 }
+
+/* The Scarmark box of the Active Effect config (foundry/effect-key-picker.mjs): a row hidden by its kind must stay hidden whatever display the form group has. */
+.scarmark-effect-kind [hidden] {
+  display: none;
+}

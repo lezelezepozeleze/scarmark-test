@@ -2,6 +2,15 @@
 
 All notable changes to the Scarmark system.
 
+## 1.1.7-beta - 2026-11-21
+
+- Effect window, new Scarmark box: "This effect is about" (Character, Weapon, Armor, Missile) decides which stats the change-key roll-downs list (attribute and skill for a character, the item's own stats for the others) and unticks Transfer for an item type. Kind is Ongoing (lasts until removed, optionally timed) or Immediate (happens once when an alter action applies it; for now only the armor repair).
+- Only one at a time: a box on any effect. With it ticked, a second copy of the same effect (same compendium entry, else same name) cannot be added to the same item or actor, and a warning says so.
+- Missiles take modifiers: an effect on a missile with `system.itemMods.impact.<short|medium|long|extreme>` changes its impact per range band, summed into `system.effective`, which the missile attack reads.
+- Submitting an effect to the library keeps the choices made in the effect window (type, kind, on hit, unique); opening the window never changes the effect, and Transfer is unticked only when you pick an item type.
+- Improve is gone as a one-shot: an upgrade is an ongoing effect with item stat changes, put in the alteration compendium by hand.
+- Poison on a blade: a weapon or missile effect can be marked "when this weapon wounds, the target is tested" with the test (default Vitality), the library effect a failure puts on the target, and the number of hits it lasts (empty = no limit). When the weapon wounds past the armor, the strike card gets a button for the target to roll the test; a miss or critical failure puts the effect on the target. Each such wound spends one charge (relayed to the GM when the clicker does not own the weapon) and the effect goes at none. Applies to melee strikes, ripostes and missiles; a clash strike on a body part carries no weapon, so it never fires.
+
 ## 1.1.6-beta - 2026-11-21
 
 - Blocking with armor: the Block dialog of a melee attack has a new Armor roll-down, listing all the defender's armor locations (locations, not pieces; blank first). The Weapon roll-down gets a blank option and still starts on the first weapon; choosing a location blanks the weapon and choosing a weapon blanks the location. One of the two is required. A block with a weapon works exactly as before, including the weapon clash. A block with armor rolls the defender's Close Combat ESL plus the melee defense modifier (no weapon Defense or specialization). When the block holds (the attack succeeded and the block succeeded at least as well), the blow is not lost: it lands on the chosen location, with the attacker's own strike dice and impact, against the armor there (armor protection, the wear roll and the wound as for any strike), and the result card says where it was turned. When the attack beats the block it strikes as usual, wherever it was aimed. Missiles are not affected (they can still only be blocked with the shields that stop them).

@@ -13,7 +13,7 @@ export async function rollD100(target) {
 }
 
 /**
- * Roll a plain d100 test against a finished target and post the result card: the shared tail of the attribute and skill tests (each builds its own target first).
+ * Roll a plain d100 test against a finished target and post the result card: the shared tail of the attribute and skill tests (each builds its own target first). Returns { roll, level } so a caller can act on the outcome.
  */
 export async function rollD100Test(actor, title, target) {
   const { roll, level } = await rollD100(target);
@@ -22,6 +22,7 @@ export async function rollD100Test(actor, title, target) {
     content: testCard({ title, target, roll: roll.total, level }),
     rolls: [roll]
   });
+  return { roll, level };
 }
 
 /** The actor a macro acts for: the first controlled token's actor, else the user's assigned character (undefined when there is neither). */

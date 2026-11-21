@@ -3,7 +3,7 @@ import "./support/foundry-stub.mjs";
 import { test } from "node:test";
 import assert from "node:assert";
 import { itemModsOf, weaponEffective, armorEffective, effectiveStat, repairedArmor, armorRepairProblem, isTimedDuration } from "../module/rules/index.mjs";
-import { buildEffectKeyOptions } from "../module/view/effects-view.mjs";
+import { buildEffectTypes } from "../module/view/effects-view.mjs";
 
 const change = (key, value, extra = {}) => ({ key: `system.itemMods.${key}`, type: "add", value, ...extra });
 const effect = (changes, extra = {}) => ({ disabled: false, transfer: false, system: { changes }, ...extra });
@@ -75,10 +75,10 @@ test("isTimedDuration: world time, rounds and turns are timed; no duration is pe
   assert.strictEqual(isTimedDuration({ value: 0, units: "hours" }), false);
 });
 
-test("effect key picker: a weapon effect lists the weapon stats, an armor effect the armor stats, other effects neither", () => {
-  const options = (parent) => buildEffectKeyOptions({ parent }, { localize: key => key }).filter(group => group.label.includes("groupItem")).flatMap(group => group.options.map(([key]) => key));
-  assert.deepStrictEqual(options({ documentName: "Item", type: "weapon" }), ["system.itemMods.attack", "system.itemMods.defense", "system.itemMods.impact.blunt", "system.itemMods.impact.edged", "system.itemMods.impact.piercing", "system.itemMods.impact.fire"]);
-  assert.deepStrictEqual(options({ documentName: "Item", type: "armor" }), ["system.itemMods.protection.blunt", "system.itemMods.protection.edged", "system.itemMods.protection.piercing", "system.itemMods.protection.fire"]);
-  assert.deepStrictEqual(options({ documentName: "Item", type: "gear" }), []);
-  assert.deepStrictEqual(options({ documentName: "Actor", items: [] }), []);
+test("effect picker: a weapon, armor or missile has its own stats, the character none of them", () => {
+  const stats = (type) => buildEffectTypes({ parent: { documentName: "Actor", items: [] } }, { localize: key => key }).types.find(entry => entry.type === type).groups.flatMap(group => group.options.map(([key]) => key));
+  assert.deepStrictEqual(stats("weapon"), ["system.itemMods.attack", "system.itemMods.defense", "system.itemMods.impact.blunt", "system.itemMods.impact.edged", "system.itemMods.impact.piercing", "system.itemMods.impact.fire"]);
+  assert.deepStrictEqual(stats("armor"), ["system.itemMods.protection.blunt", "system.itemMods.protection.edged", "system.itemMods.protection.piercing", "system.itemMods.protection.fire"]);
+  assert.deepStrictEqual(stats("missile"), ["short", "medium", "long", "extreme"].map(band => `system.itemMods.impact.${band}`));
+  assert.ok(stats("character").every(key => !key.startsWith("system.itemMods.")));
 });

@@ -1,7 +1,7 @@
 /**
- * View models of Active Effects for the sheets: the Effects tab groups and the options of the change-key picker. Pure: no Foundry globals; the text comes through `localize`.
+ * View models of Active Effects for the sheets: the Effects tab groups and the types and stats of the effect picker. Pure: no Foundry globals; the text comes through `localize`.
  */
-import { ATTRIBUTES, EFFECT_PICKER_GROUPS, ITEM_MOD_STATS, ITEM_MOD_KEY_PREFIX } from "../config/index.mjs";
+import { ATTRIBUTES, EFFECT_PICKER_GROUPS, ITEM_MOD_STATS, ITEM_MOD_KEY_PREFIX, EFFECT_TARGET_TYPES, EFFECT_TARGET_CHARACTER, IMMEDIATE_OPERATIONS } from "../config/index.mjs";
 
 /**
  * Split a Document's effects into Temporary / Passive / Inactive groups.
@@ -18,7 +18,7 @@ export function categorizeEffects(effects) {
 }
 
 /**
- * Grouped {label, key} options for the Active Effect change-key picker. Combines
+ * Grouped [key, label] options for the change-key picker of a character effect. Combines
  * the static mod keys (EFFECT_PICKER_GROUPS, the same 18 keys as SCARMARK.effectKeys), one entry per Attribute base, and -
  * if the effect belongs to an Actor - one entry per skill on that Actor (so the
  * exact ALL-CAPS name is offered and no case guessing is needed).
@@ -26,7 +26,7 @@ export function categorizeEffects(effects) {
  * @param {object} effectDoc the ActiveEffect being edited (read: parent, parent.parent)
  * @param {{skillNames?: string[], localize: (key: string) => string}} context the canonical skill names (from the Skills compendium) and the translator
  */
-export function buildEffectKeyOptions(effectDoc, { skillNames = [], localize: t }) {
+function characterKeyGroups(effectDoc, { skillNames = [], localize: t }) {
   // Static groups come from module/config/vocab.mjs EFFECT_PICKER_GROUPS (cloned: groups are extended below).
   const groups = EFFECT_PICKER_GROUPS.map(g => ({ label: t(g.label), options: g.options.map(([key, label]) => [key, t(label)]) }));
 
@@ -54,15 +54,35 @@ export function buildEffectKeyOptions(effectDoc, { skillNames = [], localize: t 
     });
   }
 
-  // On a weapon or armor piece: its own stats (rules/item-mods.mjs). The effect must not transfer to the owner for them to count.
-  const itemStats = ITEM_MOD_STATS[parent?.documentName === "Item" ? parent.type : ""];
-  if (itemStats) {
-    const label = (stat) => stat.split(".").map((part, i) => (i === 0 ? t(`SCARMARK.EffectPicker.item.${part}`) : t(`SCARMARK.Aspect.${part}`))).join(": ");
-    groups.push({
-      label: t(parent.type === "weapon" ? "SCARMARK.EffectPicker.groupItemWeapon" : "SCARMARK.EffectPicker.groupItemArmor"),
-      options: itemStats.map(stat => [`${ITEM_MOD_KEY_PREFIX}${stat}`, label(stat)])
-    });
-  }
-
   return groups;
+}
+
+/** The labels of the stat parts: the first part of a key ("impact", "protection", ...) and the second (a damage aspect or a range band). */
+const statLabel = (stat, t) => stat.split(".").map((part, i) => (i === 0 ? t(`SCARMARK.EffectPicker.item.${part}`) : t(`SCARMARK.EffectPicker.part.${part}`))).join(": ");
+
+/** The group of the stats an effect can change on one kind of item (weapon, armor, missile): [key, label] options with the item-mod key prefix. */
+function itemStatGroup(type, t) {
+  return { label: t(`SCARMARK.EffectPicker.groupItem.${type}`), options: ITEM_MOD_STATS[type].map(stat => [`${ITEM_MOD_KEY_PREFIX}${stat}`, statLabel(stat, t)]) };
+}
+
+/**
+ * The first step of the effect picker: what the effect is about (the character, a weapon, an armor piece or a missile) and, per choice, the stats it can change and the one-shot operations it can do. The type to start on is the kind of item the effect sits on (unless it transfers to the owner), else the character.
+ *
+ * @param {object} effectDoc the ActiveEffect being edited
+ * @param {{skillNames?: string[], localize: (key: string) => string}} context the canonical skill names (from the Skills compendium) and the translator
+ * @returns {{start: string, types: {type: string, label: string, groups: object[], operations: string[]}[]}}
+ */
+export function buildEffectTypes(effectDoc, context) {
+  const t = context.localize;
+  const character = characterKeyGroups(effectDoc, context);
+  const parent = effectDoc?.parent;
+  // An effect that transfers to the owner is about the character, whatever item it sits on.
+  const start = parent?.documentName === "Item" && ITEM_MOD_STATS[parent.type] && !effectDoc.transfer ? parent.type : EFFECT_TARGET_CHARACTER;
+  const types = EFFECT_TARGET_TYPES.map(type => ({
+    type,
+    label: t(`SCARMARK.EffectPicker.type.${type}`),
+    groups: type === EFFECT_TARGET_CHARACTER ? character : [itemStatGroup(type, t)],
+    operations: IMMEDIATE_OPERATIONS[type] ?? []
+  }));
+  return { start, types };
 }

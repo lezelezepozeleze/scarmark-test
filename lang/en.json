@@ -308,6 +308,9 @@
       "zoneMid": "Mid",
       "zoneLow": "Low",
       "stunTest": "Stun Test",
+      "poisonTest": "{poison}: roll the test",
+      "poisonFailed": "{actor} failed the test: {poison} takes hold.",
+      "poisonFailedNoEffect": "{actor} failed the test against {poison}.",
       "stun": {
         "blow": "Blow to the head",
         "electric": "Electric shock",
@@ -598,6 +601,7 @@
       "noPermission": "You do not own {actor}, so the effect cannot be added."
     },
     "Effect": {
+      "alreadyThere": "{target} already has {effect}, and only one may exist.",
       "new": "New Effect",
       "blank": "Blank effect",
       "libraryMissing": "That effect is no longer in the library.",
@@ -798,8 +802,39 @@
       }
     },
     "EffectPicker": {
-      "groupItemWeapon": "Weapon stats (effect on a weapon)",
-      "groupItemArmor": "Armor stats (effect on an armor piece)",
+      "groupItem": {
+        "weapon": "Weapon stats",
+        "armor": "Armor stats",
+        "missile": "Missile stats"
+      },
+      "type": {
+        "character": "Character",
+        "weapon": "Weapon",
+        "armor": "Armor",
+        "missile": "Missile"
+      },
+      "part": {
+        "blunt": "Blunt",
+        "edged": "Edge",
+        "piercing": "Piercing",
+        "fire": "Fire",
+        "short": "Short range",
+        "medium": "Medium range",
+        "long": "Long range",
+        "extreme": "Extreme range"
+      },
+      "about": "This effect is about",
+      "kind": "Kind",
+      "kindOngoing": "Ongoing - lasts until removed (or its time runs out)",
+      "kindImmediate": "Immediate - happens once, when an alter action applies it (armor repair)",
+      "operation": "Does",
+      "opRepair": "Repair (every location back to full)",
+      "onHit": "When this weapon wounds, the target is tested",
+      "onHitTest": "Test",
+      "onHitEffect": "If it fails, the target gets",
+      "charges": "Hits it lasts",
+      "chargesNone": "no limit",
+      "unique": "Only one at a time (no second copy on the same item or actor)",
       "item": {
         "attack": "Attack",
         "defense": "Defense",

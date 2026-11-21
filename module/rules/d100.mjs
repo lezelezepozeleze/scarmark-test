@@ -30,3 +30,6 @@ export function outcomeLevel(roll, target) {
   if (success) return crit ? "cs" : "ms";
   return crit ? "cf" : "mf";
 }
+
+/** Whether an outcome level is a failure (a miss or a critical failure). */
+export const isFailure = (level) => level === "mf" || level === "cf";

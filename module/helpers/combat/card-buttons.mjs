@@ -8,6 +8,7 @@
  *   fumbleStumble  data-fumblestumble  { victim: uuid, kind: "fumble" | "stumble" }
  *   stun           data-stun           { victim: uuid }
  *   shock          data-shock          { actor: uuid }
+ *   poison         data-poison         { victim: uuid, name, test, effect: uuid of the effect a failed test puts on the victim }
  * Written by hand in the card HTML (read in chat-wiring.mjs):
  *   data-combat    JSON of the declared attack, on the .attack-card (attack.mjs)
  *   data-defense   ignore | block | dodge | riposte | counterstrike (attack.mjs)
@@ -20,7 +21,8 @@ export const CARD_BUTTONS = {
   addWound: "addwound",
   fumbleStumble: "fumblestumble",
   stun: "stun",
-  shock: "shock"
+  shock: "shock",
+  poison: "poison"
 };
 
 /** HTML of a card button that carries `payload` as JSON. */

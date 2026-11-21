@@ -7,6 +7,7 @@ import { resolveRange, resolveMelee } from "./resolve.mjs";
 import { addWound } from "./wounds.mjs";
 import { rollFumbleStumble, rollStunTest } from "./forced-tests.mjs";
 import { initiateAttack } from "./attack.mjs";
+import { rollOnHit } from "./poison.mjs";
 import { CARD_BUTTONS } from "./card-buttons.mjs";
 
 /**
@@ -20,7 +21,8 @@ const JSON_BUTTONS = {
   addWound: { who: "target", run: (data) => addWound(data) },
   fumbleStumble: { who: "victim", run: (data, victim) => rollFumbleStumble(victim, data.kind) },
   stun: { who: "victim", run: (data, victim) => rollStunTest(victim) },
-  shock: { who: "actor", run: (data, victim) => rollShock(victim) }
+  shock: { who: "actor", run: (data, victim) => rollShock(victim) },
+  poison: { who: "victim", run: (data, victim) => rollOnHit(victim, data) }
 };
 
 /**

@@ -1,7 +1,7 @@
 /**
  * The effect library: every standalone Active Effect compendium of this system (alcohol, hangovers, potion sickness, combat poisonings, outnumbered ...). The Add button of the actor Effects tab lists them, and picking one puts a stamped copy on the actor - the same stamp Consume uses.
  */
-import { SYSTEM_ID, FLAGS, PACKS, ALTERATION_PACKS } from "../constants.mjs";
+import { SYSTEM_ID, FLAGS, EFFECT_CHOICE_FLAGS, PACKS, ALTERATION_PACKS } from "../constants.mjs";
 import { durationSeconds } from "../rules/index.mjs";
 
 /**
@@ -69,7 +69,12 @@ export function libraryEntryData(source) {
   for (const key of ["_id", "origin", "start"]) delete data[key];
   data.disabled = false;
   data.transfer = false;
-  if (data.flags) delete data.flags[FLAGS.scope];
+  if (data.flags) {
+    // Only the choices made in the effect window stay; the flags that tie it to an item go.
+    const keep = Object.fromEntries(EFFECT_CHOICE_FLAGS.filter(key => data.flags[FLAGS.scope]?.[key] !== undefined).map(key => [key, data.flags[FLAGS.scope][key]]));
+    if (Object.keys(keep).length) data.flags[FLAGS.scope] = keep;
+    else delete data.flags[FLAGS.scope];
+  }
   return data;
 }
 

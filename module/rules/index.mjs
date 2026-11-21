@@ -6,10 +6,13 @@
  * Lint (eslint.config.mjs) forbids Foundry globals, Math.random and imports from data/, helpers/, sheets/, foundry/ in this folder.
  */
 export { strikeDice, injuryLevelFor, armorAfterPiercing, armorWears, pickWeighted } from "./strike.mjs";
-export { capTarget, outcomeLevel } from "./d100.mjs";
+export { capTarget, outcomeLevel, isFailure } from "./d100.mjs";
 export { durationSeconds, isTimedDuration } from "./time.mjs";
 export { repairedArmor, armorRepairProblem } from "./armor-care.mjs";
-export { itemModsOf, weaponEffective, armorEffective, effectiveStat } from "./item-mods.mjs";
+export { itemModsOf, weaponEffective, armorEffective, missileEffective, effectiveStat } from "./item-mods.mjs";
+export { effectFlags } from "./effect-flags.mjs";
+export { chargesOf, chargesAfterHit, onHitEffects } from "./poison.mjs";
+export { isUniqueEffect, effectIdentity, uniqueConflict } from "./effect-unique.mjs";
 export { actionsFor, isTestAction, isAlterAction, isMessageAction, isEffectAction, parseActionTest, ownedEffectChanges } from "./actions.mjs";
 export { locationKey, covers, locationSide, hasSides, coversLocation, entryIndexesAt, holdsAt, wearIndexAt, averageCondition, startingCondition, splitBothSides, legacyCoverage, entryValue, entryFromValue, pickerEntries, armorLocationLabel } from "./locations.mjs";
 export { vitalWoundFor, severityKey, injuryFor, mendLabel, shockTarget, stunProtectionBonus } from "./wounds.mjs";

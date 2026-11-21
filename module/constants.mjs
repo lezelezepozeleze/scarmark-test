@@ -24,11 +24,26 @@ export const FLAGS = {
   improvedBy: "improvedBy",
   /** ActiveEffect in an alteration compendium: "repair" marks the entry that repairs the item instead of modifying it (config/actions.mjs ALTERATION_REPAIR). */
   alteration: "alteration",
+  /** ActiveEffect: true when no second copy of the same effect may exist on the same item or actor (rules/effect-unique.mjs, foundry/effect-unique.mjs). */
+  unique: "unique",
+  /** ActiveEffect: what the effect is about, "character", "weapon", "armor" or "missile" (config/actions.mjs EFFECT_TARGET_TYPES); the effect sheet remembers the choice. */
+  effectType: "effectType",
+  /** ActiveEffect on a weapon or missile: true when the effect fires when the weapon wounds (a poisoned blade). The strike card then offers the target a test (rules/poison.mjs). */
+  onHit: "onHit",
+  /** ActiveEffect with onHit: the test the target rolls, "skill:<name>" or "attribute:<key>" (rules/actions.mjs parseActionTest). */
+  onHitTest: "onHitTest",
+  /** ActiveEffect with onHit: the uuid of the library effect the target gets when the test fails. */
+  onHitEffect: "onHitEffect",
+  /** ActiveEffect with onHit: how many wounding hits the effect has left; empty means no limit. Each wound that gets through armor spends one, and the effect goes at none. */
+  charges: "charges",
   /** Combat: last round for which combat Fatigue and bleeding were applied. */
   lastFatigueRound: "lastFatigueRound",
   /** ActiveEffect: world time at which a consumed item's effect expires (see foundry/effect-expiry.mjs). */
   expireWorldTime: "expireWorldTime"
 };
+
+/** The flags the effect window sets (config of the effect itself). They travel with the effect when it is saved to the library; the flags that tie an effect to an item (ownedByAction, librarySource, improvedBy, expireWorldTime) do not. */
+export const EFFECT_CHOICE_FLAGS = [FLAGS.unique, FLAGS.effectType, FLAGS.alteration, FLAGS.onHit, FLAGS.onHitTest, FLAGS.onHitEffect, FLAGS.charges];
 
 /** World settings registered in the init hook. */
 export const SETTINGS = {
@@ -50,5 +65,6 @@ export const ALTERATION_PACKS = {
 
 /** User queries run on the active GM's client. */
 export const QUERIES = {
-  updateCombatItem: `${SYSTEM_ID}.updateCombatItem`
+  updateCombatItem: `${SYSTEM_ID}.updateCombatItem`,
+  spendOnHitCharge: `${SYSTEM_ID}.spendOnHitCharge`
 };

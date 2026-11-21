@@ -1,7 +1,7 @@
 /** Tests forced by wounds: Stun Test, Fumble and Stumble (the rolls, their cards and the statuses they apply). */
 
 import { outcomeLabel, testCard } from "../chat.mjs";
-import { capTarget } from "../../rules/index.mjs";
+import { capTarget, isFailure } from "../../rules/index.mjs";
 import { L } from "./util.mjs";
 import { headArmorLayer } from "./armor.mjs";
 import { esc } from "../escape.mjs";
@@ -114,7 +114,7 @@ export async function rollFumbleStumble(victim, kind) {
   const attrKey = kind === "fumble" ? "dex" : "agl";
   const target = capTarget((victim.system.attributes?.[attrKey]?.effective ?? 0) * FUMBLE_STUMBLE_MULTIPLIER);
   const { roll, level } = await rollD100(target);
-  const failed = level === "mf" || level === "cf";
+  const failed = isFailure(level);
 
   const resultKey = kind === "fumble"
     ? (failed ? "fumbleDropped" : "fumbleHeld")

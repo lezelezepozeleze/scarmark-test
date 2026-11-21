@@ -174,27 +174,29 @@ function sendMessages(item, trigger) {
   });
 }
 
-/** Roll one test action for the actor: a d100 against the ESL of the test's skill of the character (found by name), or against its effective attribute times the test multiplier, right now. The roll posts its own card. Returns whether it was rolled. */
-async function rollTest(actor, action) {
-  const test = parseActionTest(action.test);
+/** Roll a test for the actor: a d100 against the ESL of the test's skill of the character (found by name), or against its effective attribute times the test multiplier, right now. `value` is a roll-down value ("skill:<name>" or "attribute:<key>"). The roll posts its own card. Returns { roll, level }, or null when the actor cannot take the test (it is reported to the user). */
+export async function rollActionTest(actor, value) {
+  const test = parseActionTest(value);
+  if (!test) return null;
   if (test.type === "attribute") {
     const attribute = actor.system.attributes?.[test.name];
     if (!attribute) {
       warn("SCARMARK.Action.noAttribute", { actor: actor.name, attribute: test.name });
-      return false;
+      return null;
     }
     const label = game.i18n.localize(ATTRIBUTES[test.name]?.label ?? test.name);
-    await rollD100Test(actor, `${esc(label)} ${game.i18n.localize("SCARMARK.Test")}`, capTarget(attribute.effective * ATTRIBUTE_TEST_MULTIPLIER));
-    return true;
+    return rollD100Test(actor, `${esc(label)} ${game.i18n.localize("SCARMARK.Test")}`, capTarget(attribute.effective * ATTRIBUTE_TEST_MULTIPLIER));
   }
   const skill = actor.items.find(i => i.type === "skill" && i.name.toLowerCase() === test.name.toLowerCase());
   if (!skill) {
     warn("SCARMARK.Action.noSkill", { actor: actor.name, skill: test.name });
-    return false;
+    return null;
   }
-  await rollD100Test(actor, `${esc(skill.name)} ${game.i18n.localize("SCARMARK.Test")}`, capTarget(skill.system.esl));
-  return true;
+  return rollD100Test(actor, `${esc(skill.name)} ${game.i18n.localize("SCARMARK.Test")}`, capTarget(skill.system.esl));
 }
+
+/** Roll one test action for the actor (see rollActionTest). Returns whether it was rolled. */
+const rollTest = async (actor, action) => Boolean(await rollActionTest(actor, action.test));
 
 /** Roll the test actions of `item` that fire on `trigger`. Returns how many tests were rolled. */
 const rollTests = (item, trigger) => forEachAction(item, trigger, isTestAction, (action, actor) => rollTest(actor, action));

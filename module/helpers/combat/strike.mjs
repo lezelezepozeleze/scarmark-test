@@ -4,6 +4,7 @@ import { coveringArmor, armorProtection } from "./armor.mjs";
 import { L, DialogV2, locationName } from "./util.mjs";
 import { updateCombatItem } from "./gm-update.mjs";
 import { cardButton } from "./card-buttons.mjs";
+import { onHitButtons } from "./poison.mjs";
 import { aimFilter, aspectOptions } from "./dialogs.mjs";
 import { esc } from "../escape.mjs";
 import {
@@ -122,10 +123,11 @@ function strikeButtons({ victim, locType, woundData, finalWL }) {
  * @param {string} o.aspect     Damage aspect key.
  * @param {number} o.effImpact  Final impact after armor (>= 0).
  * @param {Item}   o.location   The struck armorLocation item.
+ * @param {Item|null} [o.weapon] The weapon or missile that struck; its on-hit effects (a poisoned blade) add their buttons when the wound got through the armor.
  * @param {string} o.detail     Pre-formatted "math" line.
  * @param {Roll[]} [o.rolls]    Rolls to attach to the message.
  */
-async function resolveWound({ speaker, victim, title, aspect, effImpact, location, detail, rolls = [] }) {
+async function resolveWound({ speaker, victim, title, aspect, effImpact, location, detail, rolls = [], weapon = null }) {
   const locType = location.system.locationType;
   const { woundData, woundLine, finalWL } = describeWound({ victim, aspect, effImpact, location });
 
@@ -139,7 +141,9 @@ async function resolveWound({ speaker, victim, title, aspect, effImpact, locatio
       <div class="card-line">${detail}</div>
       <div class="card-line">${woundLine}</div>
       ${wearLine ? `<div class="card-line armor-wear">${wearLine}</div>` : ""}`;
-  const buttons = strikeButtons({ victim, locType, woundData, finalWL });
+  let buttons = strikeButtons({ victim, locType, woundData, finalWL });
+  // Only a wound that got through the armor lets the weapon's poison in.
+  if (woundData && weapon) buttons += await onHitButtons(weapon, victim);
   if (buttons) content += `<div class="card-buttons">${buttons}</div>`;
   content += `</div>`;
 
@@ -166,8 +170,9 @@ const postNoLocations = (actor) => ChatMessage.create({
  * @param {string|null} [o.skill]             Combat skill key; Close and Unarmed take the attacker's Impact modifier.
  * @param {string} [o.aim]                    "mid" | "high" | "low" | "disarm".
  * @param {string} [o.part]                   Called part of the aim zone ("general" = none).
+ * @param {Item|null} [o.weapon]              The weapon or missile that struck (its on-hit effects fire on a wound).
  */
-export async function postStrike(attacker, target, aspect, impact, strikeDice, { locationFilter = null, armorPiercing = false, skill = null, aim = "mid", part = "general" } = {}) {
+export async function postStrike(attacker, target, aspect, impact, strikeDice, { locationFilter = null, armorPiercing = false, skill = null, aim = "mid", part = "general", weapon = null } = {}) {
   const aimDef = AIM[aimKey(aim)];
   const location = rollStrikeLocation(target, locationFilter ?? aimFilter(aim, part), aimDef.zone);
   if (!location) {
@@ -199,7 +204,8 @@ export async function postStrike(attacker, target, aspect, impact, strikeDice, {
     effImpact,
     location,
     detail,
-    rolls: [roll]
+    rolls: [roll],
+    weapon
   });
 }
 

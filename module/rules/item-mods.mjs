@@ -1,5 +1,5 @@
 /** Modifiers on the stats of a weapon or armor piece: an Active Effect on the item (not transferring to the owner) with changes on ITEM_MOD_KEY_PREFIX keys adds to the stat. The stored fields are never touched; the item exposes the sums as system.effective and combat reads those. Pure. */
-import { ITEM_MOD_KEY_PREFIX, DAMAGE_ASPECTS } from "../config/index.mjs";
+import { ITEM_MOD_KEY_PREFIX, DAMAGE_ASPECTS, RANGE_PENALTY } from "../config/index.mjs";
 
 /** Whether a change adds (a V14 `type: "add"`, an older numeric `mode: 2`, or neither stated). */
 const isAdd = (change) => change.type ? change.type === "add" : (change.mode === undefined || change.mode === 2);
@@ -42,8 +42,15 @@ export function armorEffective(armor, mods) {
   return { protection };
 }
 
+/** The missile impact per range band with the modifiers added. */
+export function missileEffective(missile, mods) {
+  const impact = {};
+  for (const band of Object.keys(RANGE_PENALTY)) impact[band] = (missile.impact?.[band] ?? 0) + (mods[`impact.${band}`] ?? 0);
+  return { impact };
+}
+
 /**
- * A stat of a weapon or armor as combat sees it: the effective value (modifiers added) when the item has one, else the stored one.
+ * A stat of a weapon, armor piece or missile as combat sees it: the effective value (modifiers added) when the item has one, else the stored one.
  *
  * @param {object} system the item's system data
  * @param {string} path e.g. "attack", "impact.edged", "protection.blunt"

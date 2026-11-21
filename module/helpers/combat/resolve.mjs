@@ -89,7 +89,7 @@ export async function resolveRange(data, defense, defParams = {}) {
   if (!outcome.attackerStrikes) extra.push(`<div class="card-line"><i>${L("noStrike")}</i></div>`);
   await postResultCard(x, resultCard(data, defense, x, extra));
 
-  if (outcome.attackerStrikes) await postStrike(attacker, target, data.aspect, data.impact, outcome.strikeDice, { armorPiercing: data.armorPiercing, skill: data.skill, aim: data.aim, part: data.part });
+  if (outcome.attackerStrikes) await postStrike(attacker, target, data.aspect, data.impact, outcome.strikeDice, { armorPiercing: data.armorPiercing, skill: data.skill, aim: data.aim, part: data.part, weapon: attacker.items.get(data.missile) ?? null });
 
   // A missile carries no WQ, so only the blocking shield tests: only when the
   // shot actually landed on it (a Block result) and hit hard enough (BLOCK_CLASH_MIN_IMPACT).
@@ -125,12 +125,12 @@ export async function resolveMelee(data, defense, defParams = {}) {
   await postResultCard(x, resultCard(data, defense, x, extra));
 
   const weapon = attacker.items.get(data.weapon);
-  const strikeFromAttacker = (dice, options = {}) => postStrike(attacker, target, data.aspect, weapon ? effectiveStat(weapon.system, `impact.${data.aspect}`) : 0, dice, { armorPiercing: data.armorPiercing, skill: weapon?.system.associatedSkill, aim: data.aim, part: data.part, ...options });
+  const strikeFromAttacker = (dice, options = {}) => postStrike(attacker, target, data.aspect, weapon ? effectiveStat(weapon.system, `impact.${data.aspect}`) : 0, dice, { armorPiercing: data.armorPiercing, skill: weapon?.system.associatedSkill, aim: data.aim, part: data.part, weapon, ...options });
   if (outcome.attackerStrikes) await strikeFromAttacker(outcome.strikeDice);
   else if (diverted) await strikeFromAttacker(strikeDice(aLevel), { locationFilter: (location) => location.id === armorLocation.id });
   if (outcome.defenderStrikes && defWeapon) {
     const a = defParams.aspect || "edged";
-    await postStrike(target, attacker, a, effectiveStat(defWeapon.system, `impact.${a}`) ?? 0, outcome.defStrikeDice, { armorPiercing: ARMOR_PIERCING_NAMES.test(defWeapon.name), skill: defWeapon.system.associatedSkill });
+    await postStrike(target, attacker, a, effectiveStat(defWeapon.system, `impact.${a}`) ?? 0, outcome.defStrikeDice, { armorPiercing: ARMOR_PIERCING_NAMES.test(defWeapon.name), skill: defWeapon.system.associatedSkill, weapon: defWeapon });
   }
 
   // Only a Block result (the blow landed on the guard) puts the weapons in contact; armor has no weapon to clash.

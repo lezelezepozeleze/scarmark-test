@@ -18,12 +18,21 @@ export const ACTION_KINDS = {
  */
 export const ALTERABLE_ITEM_TYPES = ["armor", "weapon"];
 export const ALTERATION_REPAIR = "repair";
+/** The one-shot operations of the "immediate" box of an effect, per kind of item. Only armor has one: repair. Weapons and missiles have no original durability to go back to, and an upgrade is an ongoing modifier, not a one-shot. */
+export const IMMEDIATE_OPERATIONS = {
+  armor: [ALTERATION_REPAIR]
+};
+
+/** The kinds of thing an effect is about (the first step of the effect picker): the character, or one kind of item. */
+export const EFFECT_TARGET_CHARACTER = "character";
+export const EFFECT_TARGET_TYPES = [EFFECT_TARGET_CHARACTER, "weapon", "armor", "missile"];
 
 /** The stats an effect on a weapon or armor can modify. The effect change key is ITEM_MOD_KEY_PREFIX + the stat (e.g. "system.itemMods.impact.edged"), type add; the item sums them (rules/item-mods.mjs) into system.effective, which combat reads. The stored fields are never changed. */
 export const ITEM_MOD_KEY_PREFIX = "system.itemMods.";
 export const ITEM_MOD_STATS = {
   weapon: ["attack", "defense", "impact.blunt", "impact.edged", "impact.piercing", "impact.fire"],
-  armor: ["protection.blunt", "protection.edged", "protection.piercing", "protection.fire"]
+  armor: ["protection.blunt", "protection.edged", "protection.piercing", "protection.fire"],
+  missile: ["impact.short", "impact.medium", "impact.long", "impact.extreme"]
 };
 
 /** "on": who an add-effect action's effect goes onto: the actor that carries the item, or the selected tokens. */
@@ -51,3 +60,8 @@ export const ACTION_TRIGGERS = {
   [ACTION_TRIGGER_USED]: { label: "SCARMARK.Action.triggerUsed", requires: "system.usable", target: true, card: { one: "SCARMARK.Action.cardUsed", many: "SCARMARK.Action.cardUsedMany", message: "SCARMARK.Action.messageUsed", announce: "SCARMARK.Action.announceUsed" } },
   [ACTION_TRIGGER_CONSUMED]: { label: "SCARMARK.Action.triggerConsumed", requires: "system.consumable", target: false, card: { one: "SCARMARK.Action.cardConsumed", many: "SCARMARK.Action.cardConsumedMany", message: "SCARMARK.Action.messageConsumed", announce: "SCARMARK.Action.announceConsumed" } }
 };
+
+/** The test an on-hit effect (a poison on a blade) asks of the target when it does not name one (same format as the tests of the Actions panel). */
+export const ON_HIT_DEFAULT_TEST = "skill:Vitality";
+/** The kinds of item whose effects can fire when the item wounds. */
+export const ON_HIT_ITEM_TYPES = ["weapon", "missile"];

@@ -1,8 +1,9 @@
 /** Updates of combat items that belong to the other side, relayed through the active GM. */
 
 import { L } from "./util.mjs";
-import { QUERIES } from "../../constants.mjs";
-import { LOCATION_SIDES } from "../../config/index.mjs";
+import { QUERIES, FLAGS } from "../../constants.mjs";
+import { LOCATION_SIDES, ON_HIT_ITEM_TYPES } from "../../config/index.mjs";
+import { chargesAfterHit } from "../../rules/index.mjs";
 
 /**
  * Update a combat item (weapon broken / shield WQ / armor AQ) even when it
@@ -48,7 +49,42 @@ async function handleUpdateCombatItem({ uuid, changes } = {}) {
   return true;
 }
 
-/** Register the GM query (called once at init). */
+/** Spend one charge of an on-hit effect (a poisoned blade): one fewer, and the effect goes when none are left. An effect with no limit is left alone. */
+async function spendCharge(effect) {
+  const left = chargesAfterHit(effect.getFlag(FLAGS.scope, FLAGS.charges));
+  if (left === null) return;
+  if (left <= 0) await effect.delete();
+  else await effect.setFlag(FLAGS.scope, FLAGS.charges, left);
+}
+
+/**
+ * Spend one charge of an on-hit effect on a weapon or missile, even when the weapon belongs to the OTHER side (the exchange resolves on the client that clicked the defense, see updateCombatItem): relayed to the active GM when this user does not own it.
+ * @returns {Promise<boolean>} whether the charge was spent
+ */
+export async function spendOnHitCharge(effect) {
+  if (effect.isOwner) { await spendCharge(effect); return true; }
+  const gm = game.users.activeGM;
+  if (!gm) { ui.notifications.warn(L("needGM")); return false; }
+  try {
+    await gm.query(QUERIES.spendOnHitCharge, { uuid: effect.uuid });
+    return true;
+  } catch (err) {
+    console.warn("Scarmark | GM charge spend failed", err);
+    ui.notifications.warn(L("needGM"));
+    return false;
+  }
+}
+
+/** GM-side handler for spendOnHitCharge. Narrow: only an on-hit effect of a weapon or missile. */
+async function handleSpendOnHitCharge({ uuid } = {}) {
+  const effect = await fromUuid(uuid);
+  if (!(effect instanceof ActiveEffect) || !ON_HIT_ITEM_TYPES.includes(effect.parent?.type) || effect.getFlag(FLAGS.scope, FLAGS.onHit) !== true) throw new Error(game.i18n.localize("SCARMARK.CombatAuto.invalidCombatItem"));
+  await spendCharge(effect);
+  return true;
+}
+
+/** Register the GM queries (called once at init). */
 export function registerScarmarkQueries() {
   CONFIG.queries[QUERIES.updateCombatItem] = handleUpdateCombatItem;
+  CONFIG.queries[QUERIES.spendOnHitCharge] = handleSpendOnHitCharge;
 }
