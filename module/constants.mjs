@@ -20,6 +20,8 @@ export const FLAGS = {
   ownedByAction: "ownedByAction",
   /** ActiveEffect on an item: the uuid of the library effect it was copied from when an action picked it (helpers/item-actions.mjs materializeActionEffects). */
   librarySource: "librarySource",
+  /** ActiveEffect on an item: set when an "improve" action put the effect there; the value is the source it came from (the library effect, else the improving item's effect), so one source cannot improve an item twice (helpers/item-actions.mjs). */
+  improvedBy: "improvedBy",
   /** Combat: last round for which combat Fatigue and bleeding were applied. */
   lastFatigueRound: "lastFatigueRound",
   /** ActiveEffect: world time at which a consumed item's effect expires (see foundry/effect-expiry.mjs). */

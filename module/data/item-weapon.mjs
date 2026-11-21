@@ -1,7 +1,7 @@
 /**
  * Data model of the "weapon" item type (melee and close-combat weapons). Owns the stored fields and the derived totalWeight / totalValue.
  */
-import { itemTotals } from "../rules/index.mjs";
+import { itemTotals, itemModsOf, weaponEffective } from "../rules/index.mjs";
 import { quantityField, weightField, valueField, carriedField, containerField, artifactField, aspectFields, actionsField } from "./shared-fields.mjs";
 import { QUALITY_INITIAL, QUALITY_MAX, COMBAT_SKILLS } from "../config/index.mjs";
 
@@ -68,7 +68,7 @@ export default class ScarmarkWeaponData extends foundry.abstract.TypeDataModel {
       rune: new fields.BooleanField({ required: true, initial: false }),
       artifact: artifactField(),
 
-      // Actions tab: blank actions for now.
+      // What the item does when used, consumed, inspected or owned: edited on the Actions tab (data/shared-fields.mjs actionsField).
       actions: actionsField()
     };
   }
@@ -77,5 +77,7 @@ export default class ScarmarkWeaponData extends foundry.abstract.TypeDataModel {
   prepareDerivedData() {
     // weight/value are per-unit; these feed the Actor's Load and Gear totals (rules/inventory.mjs gearSummary).
     Object.assign(this, itemTotals(this.weight, this.value, this.quantity));
+    // Attack, defense and impact as combat sees them: the stored values plus the modifiers of the effects on this item (rules/item-mods.mjs). The stored fields stay as they are, so the sheet inputs never write a modifier back.
+    this.effective = weaponEffective(this, itemModsOf(this.parent?.effects));
   }
 }

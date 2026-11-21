@@ -3,7 +3,7 @@
 import { testBlock } from "../chat.mjs";
 import { rollD100 } from "../dice/shared.mjs";
 import { defenseSituational, findSkillByName, weaponDsl, weaponAsl } from "./lookup.mjs";
-import { resolveOutcome, isBlockResult, dodgeVsMissile, capTarget } from "../../rules/index.mjs";
+import { resolveOutcome, isBlockResult, dodgeVsMissile, capTarget, effectiveStat } from "../../rules/index.mjs";
 import { taLines, tieLines } from "./result-lines.mjs";
 import { L } from "./util.mjs";
 import { postStrike } from "./strike.mjs";
@@ -122,11 +122,11 @@ export async function resolveMelee(data, defense, defParams = {}) {
 
   const weapon = attacker.items.get(data.weapon);
   if (outcome.attackerStrikes) {
-    await postStrike(attacker, target, data.aspect, weapon?.system.impact[data.aspect] ?? 0, outcome.strikeDice, { armorPiercing: data.armorPiercing, skill: weapon?.system.associatedSkill, aim: data.aim, part: data.part });
+    await postStrike(attacker, target, data.aspect, (weapon ? effectiveStat(weapon.system, `impact.${data.aspect}`) : 0) ?? 0, outcome.strikeDice, { armorPiercing: data.armorPiercing, skill: weapon?.system.associatedSkill, aim: data.aim, part: data.part });
   }
   if (outcome.defenderStrikes && defWeapon) {
     const a = defParams.aspect || "edged";
-    await postStrike(target, attacker, a, defWeapon.system.impact[a] ?? 0, outcome.defStrikeDice, { armorPiercing: ARMOR_PIERCING_NAMES.test(defWeapon.name), skill: defWeapon.system.associatedSkill });
+    await postStrike(target, attacker, a, effectiveStat(defWeapon.system, `impact.${a}`) ?? 0, outcome.defStrikeDice, { armorPiercing: ARMOR_PIERCING_NAMES.test(defWeapon.name), skill: defWeapon.system.associatedSkill });
   }
 
   // Only a Block result (the blow landed on the guard) puts the weapons in contact.

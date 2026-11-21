@@ -1,7 +1,7 @@
 /**
  * Data model of the "armor" item type (a worn piece). Owns the stored fields, the migration of the old location sets to coverage entries and the derived totalWeight / totalValue.
  */
-import { itemTotals, legacyCoverage, splitBothSides, averageCondition } from "../rules/index.mjs";
+import { itemTotals, legacyCoverage, splitBothSides, averageCondition, itemModsOf, armorEffective } from "../rules/index.mjs";
 import { quantityField, weightField, valueField, carriedField, containerField, aspectFields, actionsField } from "./shared-fields.mjs";
 import { ARMOR_LAYER_MAX, LOCATION_SIDES, QUALITY_INITIAL, QUALITY_PERMANENT } from "../config/index.mjs";
 
@@ -63,7 +63,7 @@ export default class ScarmarkArmorData extends foundry.abstract.TypeDataModel {
 
       notes: new fields.StringField({ required: true, initial: "", blank: true }),
 
-      // Actions tab: blank actions for now.
+      // What the item does when used, consumed, inspected or owned: edited on the Actions tab (data/shared-fields.mjs actionsField).
       actions: actionsField()
     };
   }
@@ -94,5 +94,7 @@ export default class ScarmarkArmorData extends foundry.abstract.TypeDataModel {
     // Durability = the average condition of the locations the piece covers (Natural Armor keeps -1).
     const durability = this.quality === QUALITY_PERMANENT ? null : averageCondition(this.coverage);
     if (durability !== null) this.quality = durability;
+    // The protection as combat sees it: the stored values plus the modifiers of the effects on this item (rules/item-mods.mjs). The stored fields stay as they are, so the sheet inputs never write a modifier back.
+    this.effective = armorEffective(this, itemModsOf(this.parent?.effects));
   }
 }

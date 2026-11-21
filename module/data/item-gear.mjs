@@ -39,7 +39,7 @@ export default class ScarmarkGearData extends foundry.abstract.TypeDataModel {
       rune: new fields.BooleanField({ required: true, initial: false }),
       artifact: artifactField(),
 
-      // Actions tab: blank actions for now.
+      // What the item does when used, consumed, inspected or owned: edited on the Actions tab (data/shared-fields.mjs actionsField).
       actions: actionsField()
     };
   }

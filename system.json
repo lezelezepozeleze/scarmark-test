@@ -2,7 +2,7 @@
   "id": "scarmark-test",
   "title": "scarmark-test",
   "description": "Vlastní TTRPG systém pro Foundry VTT. Nízko-magický, mechanicky štíhlý, roleplay-first.",
-  "version": "1.1.4-beta",
+  "version": "1.1.5-beta",
   "compatibility": {
     "minimum": "14",
     "verified": "14.369"

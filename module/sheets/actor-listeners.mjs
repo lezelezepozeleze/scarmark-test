@@ -16,8 +16,8 @@ export function isDropBelow(event, row) {
 export function wireActorListeners(sheet) {
   wireSkillFields(sheet);
   wireGearFilter(sheet);
-  wireConsume(sheet);
-  wireUse(sheet);
+  wireItemButton(sheet, ".gear-consume", "_consumeItem");
+  wireItemButton(sheet, ".gear-use", "_useItem");
   wireEffectLinks(sheet);
   wireItemRows(sheet);
 }
@@ -68,24 +68,13 @@ function filterChest(root, query) {
   }
 }
 
-/** Consume a consumable (explicit listener; surfaces errors instead of a silent no-op). */
-function wireConsume(sheet) {
-  for (const el of sheet.element.querySelectorAll(".gear-consume")) {
+/** Click listener of the item buttons of a row (Consume, Use): calls the sheet method with the id of the item of the row. Explicit listeners, not data-action: errors surface instead of a silent no-op. */
+function wireItemButton(sheet, selector, method) {
+  for (const el of sheet.element.querySelectorAll(selector)) {
     el.addEventListener("click", (event) => {
       event.preventDefault();
       const id = event.currentTarget.closest("[data-item-id]")?.dataset.itemId;
-      if (id) sheet._consumeItem(id);
-    });
-  }
-}
-
-/** Use a usable item (explicit listener, like Consume). */
-function wireUse(sheet) {
-  for (const el of sheet.element.querySelectorAll(".gear-use")) {
-    el.addEventListener("click", (event) => {
-      event.preventDefault();
-      const id = event.currentTarget.closest("[data-item-id]")?.dataset.itemId;
-      if (id) sheet._useItem(id);
+      if (id) sheet[method](id);
     });
   }
 }

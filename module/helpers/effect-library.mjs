@@ -40,16 +40,19 @@ export async function listEffectLibrary() {
   return groups.sort((a, b) => a.label.localeCompare(b.label));
 }
 
-/** Put a library effect on an actor. Returns the created effect, or null when the uuid no longer resolves. */
-export async function applyLibraryEffect(actor, uuid) {
-  const effect = await fromUuid(uuid);
-  if (!effect) return null;
-  const data = stampEffectData(effect.toObject(), { now: currentWorldTime(), origin: effect.uuid });
-  const [created] = await actor.createEmbeddedDocuments("ActiveEffect", [data]);
+/** Create an effect on a document; returns it. */
+async function createEffect(document, data) {
+  const [created] = await document.createEmbeddedDocuments("ActiveEffect", [data]);
   return created ?? null;
 }
 
-/** Put a plain copy of a library effect on a document (an item keeps it as part of its definition, so the copy is not stamped or started). Returns the created effect, or null when the uuid no longer resolves. */
+/** Put a library effect on an actor. Returns the created effect, or null when the uuid no longer resolves. */
+export async function applyLibraryEffect(actor, uuid) {
+  const effect = await fromUuid(uuid);
+  return effect ? createEffect(actor, stampEffectData(effect.toObject(), { now: currentWorldTime(), origin: effect.uuid })) : null;
+}
+
+/** Put a plain copy of a library effect on a document (an item keeps it as part of its definition, so the copy is not stamped or started, and does not transfer to the owner). The copy remembers where it came from. Returns the created effect, or null when the uuid no longer resolves. */
 export async function copyLibraryEffect(document, uuid) {
   const effect = await fromUuid(uuid);
   if (!effect) return null;
@@ -57,6 +60,5 @@ export async function copyLibraryEffect(document, uuid) {
   delete data._id;
   data.transfer = false;
   data.flags = { ...(data.flags ?? {}), [FLAGS.scope]: { ...(data.flags?.[FLAGS.scope] ?? {}), [FLAGS.librarySource]: uuid } };
-  const [created] = await document.createEmbeddedDocuments("ActiveEffect", [data]);
-  return created ?? null;
+  return createEffect(document, data);
 }

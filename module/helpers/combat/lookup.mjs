@@ -1,7 +1,7 @@
 /** Skill and weapon lookups: ESL, attack/defense skill levels, aspects, body parts and shields. */
 
 import { COMBAT_SKILLS } from "../../config/index.mjs";
-import { rangedBlockShields } from "../../rules/index.mjs";
+import { rangedBlockShields, effectiveStat } from "../../rules/index.mjs";
 import { outnumberedPenalty } from "../../data/base-actor-schema.mjs";
 import { ALL_ASPECTS } from "./constants.mjs";
 
@@ -22,10 +22,10 @@ function combatSkillEsl(actor, key) {
 }
 
 /** A weapon's Attack Skill Level: the combat skill's ESL + the weapon's attack and specialization + the actor's melee attack modifier. */
-export const weaponAsl = (actor, w) => combatSkillEsl(actor, w.system.associatedSkill) + w.system.attack + w.system.specialization + (actor.system.mods?.meleeAttack ?? 0);
+export const weaponAsl = (actor, w) => combatSkillEsl(actor, w.system.associatedSkill) + effectiveStat(w.system, "attack") + w.system.specialization + (actor.system.mods?.meleeAttack ?? 0);
 
 /** A weapon's Defense Skill Level: the combat skill's ESL + the weapon's defense and specialization + the actor's melee defense modifier. */
-export const weaponDsl = (actor, w) => combatSkillEsl(actor, w.system.associatedSkill) + w.system.defense + w.system.specialization + (actor.system.mods?.meleeDefense ?? 0);
+export const weaponDsl = (actor, w) => combatSkillEsl(actor, w.system.associatedSkill) + effectiveStat(w.system, "defense") + w.system.specialization + (actor.system.mods?.meleeDefense ?? 0);
 
 /** A missile's ASL before range, aim, the dialog modifier and the target's status. Shown on the sheet and rolled in attack.mjs. */
 export const missileAsl = (actor, m) => combatSkillEsl(actor, m.system.associatedSkill) + (m.system.specialization ?? 0) + (actor.system.mods?.missileAttack ?? 0);
@@ -41,7 +41,7 @@ export const availableAspects = (weapon) => ALL_ASPECTS.filter(a => (weapon.syst
 export function bestAspectKey(weapon) {
   const avail = availableAspects(weapon);
   if (!avail.length) return "blunt";
-  return avail.reduce((best, a) => (weapon.system.impact[a] > weapon.system.impact[best] ? a : best), avail[0]);
+  return avail.reduce((best, a) => (effectiveStat(weapon.system, `impact.${a}`) > effectiveStat(weapon.system, `impact.${best}`) ? a : best), avail[0]);
 }
 
 /** WQ 0 (or less) is the "not breakable" sentinel: natural weapons / body parts. */

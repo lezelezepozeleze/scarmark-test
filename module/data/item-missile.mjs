@@ -68,7 +68,7 @@ export default class ScarmarkMissileData extends foundry.abstract.TypeDataModel 
 
       notes: new fields.StringField({ required: true, initial: "", blank: true }),
 
-      // Actions tab: blank actions for now.
+      // What the item does when used, consumed, inspected or owned: edited on the Actions tab (data/shared-fields.mjs actionsField).
       actions: actionsField()
     };
   }

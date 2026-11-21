@@ -17,7 +17,7 @@ export function scarmarkEffectExpired(effect, worldTime) {
   return false;
 }
 
-/** Delete the expired timed effects of every actor (only on the active GM's client). */
+/** Delete the expired timed effects of every actor and item (only on the active GM's client). */
 function sweepScarmarkEffects() {
   if (game.users.activeGM?.id !== game.user.id || !game.time) return;   // only the active GM sweeps (two GMs would delete the same effects)
   let worldTime;
@@ -26,9 +26,13 @@ function sweepScarmarkEffects() {
   const actors = new Set(game.actors);
   for (const scene of game.scenes) for (const token of scene.tokens) if (!token.actorLink && token.actor) actors.add(token.actor);
   for (const token of canvas.tokens?.placeables ?? []) if (token.actor) actors.add(token.actor);
-  for (const actor of actors) {
-    const expired = actor.effects.filter(e => scarmarkEffectExpired(e, worldTime)).map(e => e.id);
-    if (expired.length) actor.deleteEmbeddedDocuments("ActiveEffect", expired).catch(err =>
+  // The effects of actors, and the ones on their items and on world items (timed modifiers of a weapon or armor).
+  const holders = new Set(actors);
+  for (const actor of actors) for (const item of actor.items) holders.add(item);
+  for (const item of game.items) holders.add(item);
+  for (const holder of holders) {
+    const expired = holder.effects.filter(e => scarmarkEffectExpired(e, worldTime)).map(e => e.id);
+    if (expired.length) holder.deleteEmbeddedDocuments("ActiveEffect", expired).catch(err =>
       console.warn("Scarmark | effect-expiry delete failed", err));
   }
 }

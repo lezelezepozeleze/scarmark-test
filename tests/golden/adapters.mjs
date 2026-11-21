@@ -487,6 +487,8 @@ export const adapters = {
     for (const [k, v] of Object.entries(prepared)) {
       // Armor made before the coverage entries stores `locations`; migrateData turns them into `coverage` (tests/location-sides.test.mjs checks that conversion), so it is not a value the preparation derived.
       if (k === "coverage" && (Array.isArray(doc.system.locations) || doc.type === "armor")) continue; // armor: the conditions are filled in by the test (bridgeConditions), not derived
+      // `effective` (weapon attack/defense/impact, armor protection with the modifiers of the item's effects added, rules/item-mods.mjs) was added after these cases were captured; it equals the stored values when the item has no modifier (tests/item-mods.test.mjs), so the existing derived values are what is compared.
+      if (k === "effective") continue;
       if (!isDeepStrictEqual(v, doc.system[k])) derived[k] = v;
     }
     return { derived };

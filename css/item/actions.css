@@ -45,3 +45,8 @@
 .scarmark .actions-panel .action-empty {
   color: var(--sm-text-muted);
 }
+
+.scarmark .actions-panel .action-entry input[type="text"] {
+  flex: 1 1 0;
+  min-width: 0;
+}

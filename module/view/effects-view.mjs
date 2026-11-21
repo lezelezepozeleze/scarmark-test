@@ -1,7 +1,7 @@
 /**
  * View models of Active Effects for the sheets: the Effects tab groups and the options of the change-key picker. Pure: no Foundry globals; the text comes through `localize`.
  */
-import { ATTRIBUTES, EFFECT_PICKER_GROUPS } from "../config/index.mjs";
+import { ATTRIBUTES, EFFECT_PICKER_GROUPS, ITEM_MOD_STATS, ITEM_MOD_KEY_PREFIX } from "../config/index.mjs";
 
 /**
  * Split a Document's effects into Temporary / Passive / Inactive groups.
@@ -51,6 +51,16 @@ export function buildEffectKeyOptions(effectDoc, { skillNames = [], localize: t 
     groups.push({
       label: t("SCARMARK.EffectPicker.groupIndividual"),
       options: [...names].sort((a, b) => a.localeCompare(b)).map(n => [`system.mods.skill.${n}`, n])
+    });
+  }
+
+  // On a weapon or armor piece: its own stats (rules/item-mods.mjs). The effect must not transfer to the owner for them to count.
+  const itemStats = ITEM_MOD_STATS[parent?.documentName === "Item" ? parent.type : ""];
+  if (itemStats) {
+    const label = (stat) => stat.split(".").map((part, i) => (i === 0 ? t(`SCARMARK.EffectPicker.item.${part}`) : t(`SCARMARK.Aspect.${part}`))).join(": ");
+    groups.push({
+      label: t(parent.type === "weapon" ? "SCARMARK.EffectPicker.groupItemWeapon" : "SCARMARK.EffectPicker.groupItemArmor"),
+      options: itemStats.map(stat => [`${ITEM_MOD_KEY_PREFIX}${stat}`, label(stat)])
     });
   }
 

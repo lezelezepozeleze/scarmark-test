@@ -46,13 +46,15 @@ export const aspectFields = (makeField) => new fields.SchemaField(Object.fromEnt
 export const skillAttributeField = (attributes, initial) => new fields.StringField({ required: true, initial, choices: Object.keys(attributes) });
 
 /**
- * A list of actions: "use <effect> on <on> when <when>" ({ id, kind, test, effect, on, targetItem, when }). Put it on ANY data model (item or actor) as `actions: actionsField()`; the Actions panel (sheets/actions/action-panel.mjs) edits it wherever the field lives. `kind` is "effect" (add the effect) or "test" (roll the test); `effect` is the id of an Active Effect of the document; `test` is a key of ACTION_TESTS; `on` and `when` are keys of the panel's roll-downs; `targetItem` is the id of an item of the owning actor (used when `on` is "item").
+ * A list of actions: "use <effect> on <on> when <when>" ({ id, kind, test, alteration, message, effect, on, targetItem, when }). Put it on ANY data model (item or actor) as `actions: actionsField()`; the Actions panel (sheets/actions/action-panel.mjs) edits it wherever the field lives. `kind` is "effect" (add the effect), "test" (roll the test), "alter" (repair or improve an item; `alteration` is a key of ACTION_ALTERATIONS, `targetItem` the item) or "message" (post `message` to the chat); `effect` is the id of an Active Effect of the document; `test` is a key of ACTION_TESTS; `on` and `when` are keys of the panel's roll-downs; `targetItem` is the id of an item of the owning actor (used when `on` is "item").
  */
 export const actionsField = () => new fields.ArrayField(
   new fields.SchemaField({
     id: new fields.StringField({ required: true, initial: "", blank: true }),
     kind: new fields.StringField({ required: true, initial: "effect", blank: true }),
     test: new fields.StringField({ required: true, initial: "", blank: true }),
+    alteration: new fields.StringField({ required: true, initial: "", blank: true }),
+    message: new fields.StringField({ required: true, initial: "", blank: true }),
     effect: new fields.StringField({ required: true, initial: "", blank: true }),
     on: new fields.StringField({ required: true, initial: "", blank: true }),
     targetItem: new fields.StringField({ required: true, initial: "", blank: true }),

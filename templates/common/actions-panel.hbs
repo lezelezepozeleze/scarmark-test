@@ -1,4 +1,4 @@
-{{!-- The Actions panel: one "when <trigger> add effect / roll test, on <target>" row per action, with the Add link. Parameter: panel - the view model from prepareActionsPanel (sheets/actions/action-panel.mjs). Not tied to item sheets: the data path comes from panel.path. The "on" roll-down (and the item picker) only show for a trigger that asks for a target. --}}
+{{!-- The Actions panel: one "when <trigger> <do> ..." row per action, with the Add link. Parameter: panel - the view model from prepareActionsPanel (sheets/actions/action-panel.mjs). Not tied to item sheets: the data path comes from panel.path. What follows "do" depends on it: an effect (and "on" for a trigger that asks for a target), a test, an alteration with its item (and the effect of an improve), or a message text. --}}
 <div class="actions-panel" data-actions-path="{{panel.path}}">
   <div class="actions-header">
     <a class="add-action" data-action="createAction">
@@ -10,41 +10,27 @@
     <li class="action-entry" data-index="{{index}}">
       <input type="hidden" name="{{row.prefix}}.id" value="{{row.id}}" />
       <span class="action-word">{{localize 'SCARMARK.Action.when'}}</span>
-      <select class="action-when" name="{{row.when.name}}">
-        {{#each row.when.options}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
-      </select>
-      <select class="action-kind" name="{{row.kind.name}}">
-        {{#each row.kind.options}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
-      </select>
+      {{> "systems/scarmark-test/templates/common/roll-down.hbs" field=row.when cls="action-when"}}
+      {{> "systems/scarmark-test/templates/common/roll-down.hbs" field=row.kind cls="action-kind"}}
       {{#if row.isTest}}
-      <select class="action-test" name="{{row.test.name}}">
-        <option value=""{{#if row.test.blankSelected}} selected{{/if}}></option>
-        {{#each row.test.groups}}
-        <optgroup label="{{label}}">
-          {{#each options}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
-        </optgroup>
-        {{/each}}
-      </select>
-      {{else}}
-      <select class="action-effect" name="{{row.effect.name}}">
-        <option value=""{{#if row.effect.blankSelected}} selected{{/if}}></option>
-        {{#each row.effect.groups}}
-        <optgroup label="{{label}}">
-          {{#each options}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
-        </optgroup>
-        {{/each}}
-      </select>
+      {{> "systems/scarmark-test/templates/common/roll-down.hbs" field=row.test cls="action-test"}}
+      {{/if}}
+      {{#if row.isAlter}}
+      {{> "systems/scarmark-test/templates/common/roll-down.hbs" field=row.alteration cls="action-alteration"}}
+      {{/if}}
+      {{#if row.showEffect}}
+      {{> "systems/scarmark-test/templates/common/roll-down.hbs" field=row.effect cls="action-effect"}}
+      {{/if}}
+      {{#if row.isMessage}}
+      <input type="text" class="action-message" name="{{row.message.name}}" value="{{row.message.value}}" placeholder="{{localize 'SCARMARK.Action.messagePlaceholder'}}" />
       {{/if}}
       {{#if row.showOn}}
       <span class="action-word">{{localize 'SCARMARK.Action.on'}}</span>
-      <select class="action-on" name="{{row.on.name}}">
-        {{#each row.on.options}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
-      </select>
+      {{> "systems/scarmark-test/templates/common/roll-down.hbs" field=row.on cls="action-on"}}
       {{/if}}
       {{#if row.showItem}}
-      <select class="action-item" name="{{row.targetItem.name}}">
-        {{#each row.targetItem.options}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
-      </select>
+      <span class="action-word">{{localize 'SCARMARK.Action.on'}}</span>
+      {{> "systems/scarmark-test/templates/common/roll-down.hbs" field=row.targetItem cls="action-item"}}
       {{/if}}
       <a class="action-delete" data-action="deleteAction" title="{{localize 'SCARMARK.Delete'}}"><i class="fa-solid fa-trash"></i></a>
     </li>

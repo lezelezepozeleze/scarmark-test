@@ -3,7 +3,7 @@ import { SCARMARK } from "../config.mjs";
 import { DODGE_SKILL } from "../config/index.mjs";
 import { findEsotericSkill } from "../helpers/dice.mjs";
 import { coveringArmor } from "../helpers/combat.mjs";
-import { protectionSum, spellTarget, invocationTarget, locationSide } from "../rules/index.mjs";
+import { protectionSum, spellTarget, invocationTarget, locationSide, effectiveStat } from "../rules/index.mjs";
 import { findSkillByName, weaponAsl, weaponDsl, missileAsl } from "../helpers/combat/lookup.mjs";
 import { esotericsStatistics } from "../view/esoterics-stats.mjs";
 
@@ -82,9 +82,9 @@ export function prepareCombat(context, actor, items) {
     return {
       id: w.id, name: w.name, img: w.img,
       qty: w.system.quantity, wq: w.system.quality,
-      a: w.system.attack, d: w.system.defense, spec: w.system.specialization,
-      b: asp(w.system.impact.blunt), e: asp(w.system.impact.edged),
-      p: asp(w.system.impact.piercing), f: asp(w.system.impact.fire),
+      a: effectiveStat(w.system, "attack"), d: effectiveStat(w.system, "defense"), spec: w.system.specialization,
+      b: asp(effectiveStat(w.system, "impact.blunt")), e: asp(effectiveStat(w.system, "impact.edged")),
+      p: asp(effectiveStat(w.system, "impact.piercing")), f: asp(effectiveStat(w.system, "impact.fire")),
       asl: weaponAsl(actor, w),
       dsl: weaponDsl(actor, w),
       notes: w.system.notes

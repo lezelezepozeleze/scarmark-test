@@ -3,7 +3,7 @@
  * Most item sheets are a header, the tab navigation, one properties panel and an Effects tab.
  */
 import { TEMPLATE_DIR } from "../constants.mjs";
-import { ACTIONS_PANEL_TEMPLATE } from "./actions/action-panel.mjs";
+import { ACTIONS_PANEL_TEMPLATES } from "./actions/action-panel.mjs";
 
 const ITEM_DIR = `${TEMPLATE_DIR}item/`;
 
@@ -24,7 +24,7 @@ export const tabsPart = () => ({ template: "templates/generic/tab-navigation.hbs
 export const effectsPart = () => ({ template: `${ITEM_DIR}parts/effects.hbs`, templates: itemPartials("effects-table") });
 
 /** The Actions tab part. */
-export const actionsPart = () => ({ template: `${ITEM_DIR}parts/actions.hbs`, templates: [ACTIONS_PANEL_TEMPLATE] });
+export const actionsPart = () => ({ template: `${ITEM_DIR}parts/actions.hbs`, templates: ACTIONS_PANEL_TEMPLATES });
 
 /**
  * The static TABS of an item sheet: the details tab (id "details", so the .details CSS applies) and a second tab, then the Actions tab.

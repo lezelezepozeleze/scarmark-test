@@ -2,6 +2,17 @@
 
 All notable changes to the Scarmark system.
 
+## 1.1.5-beta - 2026-11-21
+
+- Action kinds, the whole "do" tree: add effect (on Self or Selected token; the Item target is gone), roll test, alter, send message.
+- Alter: repair or improve an armor piece or weapon of the carrying character. Improve puts a copy of an effect on the item as a modifier (permanent, or timed if the effect has a duration), once per source: an item that already has an effect from the same source is refused. Repair (armor for now) puts every location back to the original durability and removes the temporary modifiers the item got from improve; permanent ones stay. Natural armor and armor with no location are refused. Weapon repair comes later. Both post a public card.
+- Weapons and armor take modifiers: an Active Effect on the item (it must not transfer to the owner) with changes on `system.itemMods.<stat>` keys, type add, changes the stat. Stats: weapon attack, defense and impact per aspect; armor protection per aspect. The item sums them into `system.effective`; the stored fields (and so the sheet inputs) never change, and combat, the combat tab and the armor protection read the effective values. The effect key picker lists these keys on a weapon or armor effect.
+- Timed effects on items expire like the ones on actors (the sweep covers the items of actors and world items).
+- Send message: an action that posts a text to the chat, "<character> used <item>. <message>" (the verb follows the trigger).
+- The one-shot armor improve of the previous step (+1 on every condition, the Improved box) is replaced by the effect-based improve; armor has no `improved` field.
+- Using and consuming always say so in the chat: "<character> used <item>." or "<character> consumed <item>." (public). When an action already said it (an add-effect or message card starts with the same words) there is no second line. Inspecting says nothing on its own. The toasts "<item> used" and "<item> consumed" are gone, the card replaces them.
+- Cleanup: one runner for all four kinds of action (`runActions`, with a hook for the toxicity), one `forEachAction`, one roll-down partial (`templates/common/roll-down.hbs`) instead of seven copies of the same select, one listener for the Consume and Use icons, one `createEffect` in the effect library. Consume no longer counts the toxicity effect as an action that ran, so a consumable whose actions all failed is not spent.
+
 ## 1.1.4-beta - 2026-11-21
 
 - The Effects tab of an item with an Actions tab is just a list: its Add link is gone. Effects get onto the item through its actions: the effect roll-down of an action now offers every effect of the effect library (grouped by compendium) after the item's own effects. Picking a library effect copies it onto the item (once per library effect, not transferring) and points the action at the copy, so the Effects tab always lists everything the actions use. Sheets with no Actions tab (the trait) keep their Add.

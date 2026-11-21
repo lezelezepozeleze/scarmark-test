@@ -113,10 +113,10 @@ export function outnumberedPenaltyFor(count) {
  *
  * Which pieces count (worn, not destroyed, covering the location) is decided by the caller (helpers/combat/armor.mjs coveringArmor); this only adds up. A piece without a value for the aspect counts as 0.
  *
- * @param {Array<{system: {protection?: Object<string, number>}}>} pieces
+ * @param {Array<{system: {protection?: Object<string, number>, effective?: {protection?: Object<string, number>}}}>} pieces (the effective protection, with the modifiers of the item's effects, is used when the piece has one)
  * @param {string} aspect blunt | edged | piercing | fire
  * @returns {number}
  */
 export function protectionSum(pieces, aspect) {
-  return pieces.reduce((sum, piece) => sum + (piece.system.protection?.[aspect] ?? 0), 0);
+  return pieces.reduce((sum, piece) => sum + (piece.system.effective?.protection?.[aspect] ?? piece.system.protection?.[aspect] ?? 0), 0);
 }
