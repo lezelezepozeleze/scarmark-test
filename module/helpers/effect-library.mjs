@@ -48,3 +48,13 @@ export async function applyLibraryEffect(actor, uuid) {
   const [created] = await actor.createEmbeddedDocuments("ActiveEffect", [data]);
   return created ?? null;
 }
+
+/** Put a plain copy of a library effect on a document (an item keeps it as part of its definition, so the copy is not stamped or started). Returns the created effect, or null when the uuid no longer resolves. */
+export async function copyLibraryEffect(document, uuid) {
+  const effect = await fromUuid(uuid);
+  if (!effect) return null;
+  const data = effect.toObject();
+  delete data._id;
+  const [created] = await document.createEmbeddedDocuments("ActiveEffect", [data]);
+  return created ?? null;
+}

@@ -1,16 +1,18 @@
 /** The base of every item sheet: the Details tab (subclass-provided), the common Effects tab and the portrait picker. */
 import { FORM_LIMITS } from "../config/index.mjs";
 import { enhanceAccessibility, wireButtonKeys } from "./a11y.mjs";
-import { onEditImage, effectIdOf, blankEffectData, toggleEffect, openEffect } from "./actions/effects.mjs";
+import { onEditImage, effectIdOf, toggleEffect, openEffect } from "./actions/effects.mjs";
+import { openEffectMenu } from "./effect-menu.mjs";
+import { copyLibraryEffect } from "../helpers/effect-library.mjs";
 import { ActionsPanelMixin } from "./actions/action-panel.mjs";
 import { itemTabs, headerPart, tabsPart, effectsPart, actionsPart } from "./item-layout.mjs";
 
 const { HandlebarsApplicationMixin } = foundry.applications.api;
 const { ItemSheetV2 } = foundry.applications.sheets;
 
-/** Add a blank Active Effect to the item. */
-function onCreateEffect() {
-  this.document.createEmbeddedDocuments("ActiveEffect", [blankEffectData()]);
+/** The Add button of the Effects tab: opens the effect menu (a blank effect, then the effect library), the same one as on the actor sheet; a library effect is copied onto the item. */
+function onCreateEffect(event, target) {
+  return openEffectMenu(this, target, copyLibraryEffect);
 }
 
 /** Open the effect of this row. */

@@ -1328,6 +1328,14 @@
               "blank": true
             }
           },
+          "targetItem": {
+            "type": "StringField",
+            "options": {
+              "required": true,
+              "initial": "",
+              "blank": true
+            }
+          },
           "when": {
             "type": "StringField",
             "options": {
@@ -1556,6 +1564,14 @@
             }
           },
           "on": {
+            "type": "StringField",
+            "options": {
+              "required": true,
+              "initial": "",
+              "blank": true
+            }
+          },
+          "targetItem": {
             "type": "StringField",
             "options": {
               "required": true,
@@ -1803,6 +1819,14 @@
             }
           },
           "on": {
+            "type": "StringField",
+            "options": {
+              "required": true,
+              "initial": "",
+              "blank": true
+            }
+          },
+          "targetItem": {
             "type": "StringField",
             "options": {
               "required": true,
@@ -2154,6 +2178,14 @@
               "blank": true
             }
           },
+          "targetItem": {
+            "type": "StringField",
+            "options": {
+              "required": true,
+              "initial": "",
+              "blank": true
+            }
+          },
           "when": {
             "type": "StringField",
             "options": {
@@ -2249,6 +2281,14 @@
               "blank": true
             }
           },
+          "targetItem": {
+            "type": "StringField",
+            "options": {
+              "required": true,
+              "initial": "",
+              "blank": true
+            }
+          },
           "when": {
             "type": "StringField",
             "options": {
@@ -2336,6 +2376,14 @@
             }
           },
           "on": {
+            "type": "StringField",
+            "options": {
+              "required": true,
+              "initial": "",
+              "blank": true
+            }
+          },
+          "targetItem": {
             "type": "StringField",
             "options": {
               "required": true,

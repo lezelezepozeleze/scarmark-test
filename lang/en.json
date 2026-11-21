@@ -559,7 +559,11 @@
       "none": "None",
       "thisItem": "This item",
       "targetSelectedToken": "Selected token",
+      "targetSelf": "Self",
+      "targetItem": "Item",
       "triggerUsed": "Used",
+      "noOwner": "This item is not on a character.",
+      "noTargetItem": "Pick the item the effect goes on (the item must be on a character).",
       "effectMissing": "An action of {item} names an effect that no longer exists.",
       "noTarget": "Select a token first.",
       "noPermission": "You do not own {actor}, so the effect cannot be added."

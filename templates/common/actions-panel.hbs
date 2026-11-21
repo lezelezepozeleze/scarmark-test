@@ -22,6 +22,11 @@
       <select class="action-on" name="{{row.on.name}}">
         {{#each row.on.options}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
       </select>
+      {{#if row.showItem}}
+      <select class="action-item" name="{{row.targetItem.name}}">
+        {{#each row.targetItem.options}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
+      </select>
+      {{/if}}
       <span class="action-word">{{localize 'SCARMARK.Action.when'}}</span>
       <select class="action-when" name="{{row.when.name}}">
         {{#each row.when.options}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}

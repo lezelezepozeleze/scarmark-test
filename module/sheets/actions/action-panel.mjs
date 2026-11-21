@@ -4,10 +4,10 @@
  *   2. wrap the sheet class: `class MySheet extends ActionsPanelMixin(HandlebarsApplicationMixin(DocumentSheetV2))` (adds the click actions and context.actionsPanel);
  *   3. put `{{> "systems/scarmark-test/templates/common/actions-panel.hbs" panel=actionsPanel}}` in a template (tab, section, dialog) and list ACTIONS_PANEL_TEMPLATE in that part's `templates`.
  * The panel finds its data path from the markup (data-actions-path), so several panels, each with its own path, can live on one sheet (give each its own context key: prepareActionsPanel(document, path, library)).
- * The effect roll-down offers the effects of the document itself and every effect of the effect library (the Active Effect compendia); the stored value is the effect's uuid. The "on" and "when" roll-downs come from config/actions.mjs.
+ * The effect roll-down offers the effects of the document itself and every effect of the effect library (the Active Effect compendia); the stored value is the effect's uuid. The "on" and "when" roll-downs come from config/actions.mjs; an option can require a flag of the document (e.g. "Consumed" needs system.consumable), so the lists follow the item's checkboxes.
  */
 import { TEMPLATE_DIR } from "../../constants.mjs";
-import { ACTION_TARGETS, ACTION_TRIGGERS } from "../../config/index.mjs";
+import { ACTION_TARGETS, ACTION_TRIGGERS, ACTION_TARGET_ITEM } from "../../config/index.mjs";
 import { listEffectLibrary } from "../../helpers/effect-library.mjs";
 
 export const ACTIONS_PANEL_TEMPLATE = `${TEMPLATE_DIR}common/actions-panel.hbs`;
@@ -16,7 +16,11 @@ export const ACTIONS_PANEL_TEMPLATE = `${TEMPLATE_DIR}common/actions-panel.hbs`;
 export const DEFAULT_ACTIONS_PATH = "system.actions";
 
 /** A copy of the actions stored at `path` (the stored data, not the prepared one). */
-const storedActions = (document, path) => (path.split(".").reduce((data, key) => data?.[key], document._source ?? document) ?? []).map(action => ({ ...action }));
+const readPath = (data, path) => path.split(".").reduce((value, key) => value?.[key], data);
+const storedActions = (document, path) => (readPath(document._source ?? document, path) ?? []).map(action => ({ ...action }));
+
+/** The items of the actor that owns the document (the actor's own items when the document is an actor); none for a loose item. */
+const inventoryOf = (document) => document.documentName === "Actor" ? document.items : (document.parent?.documentName === "Actor" ? document.parent.items : []);
 
 /** A roll-down of plain options: its form field name, and its options with the selected one marked (the blank option first). */
 function rollDown(name, value, options) {
@@ -46,16 +50,22 @@ export function prepareActionsPanel(document, path = DEFAULT_ACTIONS_PATH, libra
     ...(own.length ? [{ label: game.i18n.localize("SCARMARK.Action.thisItem"), options: own }] : []),
     ...library.map(group => ({ label: group.label, options: group.entries.map(entry => ({ value: entry.uuid, label: entry.name })) }))
   ];
-  const fromTable = (table) => Object.entries(table).map(([value, key]) => ({ value, label: game.i18n.localize(key) }));
-  const targetOptions = fromTable(ACTION_TARGETS);
-  const triggerOptions = fromTable(ACTION_TRIGGERS);
+  const data = document._source ?? document;
+  const offered = (table, current) => Object.entries(table)
+    .filter(([key, option]) => !option.requires || readPath(data, option.requires) || key === current)
+    .map(([value, option]) => ({ value, label: game.i18n.localize(option.label) }));
+  const itemOptions = Array.from(inventoryOf(document)).map(item => ({ value: item.id, label: item.name }));
   const rows = storedActions(document, path).map((action, index) => {
     const prefix = `${path}.${index}`;
+    const targetOptions = offered(ACTION_TARGETS, action.on);
+    const triggerOptions = offered(ACTION_TRIGGERS, action.when);
     return {
       prefix,
       id: action.id,
       effect: effectRollDown(`${prefix}.effect`, action.effect, groups),
       on: rollDown(`${prefix}.on`, action.on, targetOptions),
+      showItem: action.on === ACTION_TARGET_ITEM,
+      targetItem: rollDown(`${prefix}.targetItem`, action.targetItem, itemOptions),
       when: rollDown(`${prefix}.when`, action.when, triggerOptions)
     };
   });
@@ -70,7 +80,7 @@ function onCreateAction(event, target) {
   const path = pathOf(target);
   if (!path) return;
   const actions = storedActions(this.document, path);
-  actions.push({ id: foundry.utils.randomID(), effect: "", on: "", when: "" });
+  actions.push({ id: foundry.utils.randomID(), effect: "", on: "", targetItem: "", when: "" });
   this.document.update({ [path]: actions });
 }
 

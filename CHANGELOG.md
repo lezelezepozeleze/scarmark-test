@@ -2,6 +2,13 @@
 
 All notable changes to the Scarmark system.
 
+## 1.1.2-beta - 2026-11-21
+
+- Actions: the "on" roll-down offers Self (the actor that carries the item), Selected token and Item. Choosing Item adds a second roll-down listing every item of the carrying actor; the effect is then put on that item and made to transfer, so it applies to the actor while they own the item. The action gets a `targetItem` field (the item id). The "when" roll-down still has only "Used" (a Usable item); "Consumed" is left for later and Consume works exactly as before.
+- Toxicity stays a consumable-only mechanism: it is applied by Consume and nothing in the Actions panel uses it.
+- The Add button of an item's Effects tab opens the same menu as the actor Effects tab: a blank effect, then every effect of the effect library grouped by compendium. A library effect is copied onto the item as it is (not started).
+- Each option in `config/actions.mjs` is `{ label, requires }`: the lang key and the flag of the document that must be ticked for the option to be offered (null = always). An option a saved action already uses stays in its roll-down even when the flag is unticked later.
+
 ## 1.1.1-beta - 2026-11-21
 
 - The Actions tab is now a reusable panel instead of item-only code. An action reads "add <effect> on <target> when: <trigger>" and is stored as `{ id, effect, on, when }` (the temporary `name` of 1.1.0-beta is gone). The effect roll-down lists the effects of the document itself and every effect of the effect library (the Active Effect compendia), stored as a uuid. The target and trigger roll-downs come from `config/actions.mjs`: target "Selected token", trigger "Used".
