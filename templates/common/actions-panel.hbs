@@ -1,4 +1,4 @@
-{{!-- The Actions panel: one "add <effect> on <target> when: <trigger>" row per action, with the Add link. Parameter: panel - the view model from prepareActionsPanel (sheets/actions/action-panel.mjs). Not tied to item sheets: the data path comes from panel.path. --}}
+{{!-- The Actions panel: one "when <trigger> add effect / roll test, on <target>" row per action, with the Add link. Parameter: panel - the view model from prepareActionsPanel (sheets/actions/action-panel.mjs). Not tied to item sheets: the data path comes from panel.path. The "on" roll-down (and the item picker) only show for a trigger that asks for a target. --}}
 <div class="actions-panel" data-actions-path="{{panel.path}}">
   <div class="actions-header">
     <a class="add-action" data-action="createAction">
@@ -9,28 +9,33 @@
     {{#each panel.rows as |row index|}}
     <li class="action-entry" data-index="{{index}}">
       <input type="hidden" name="{{row.prefix}}.id" value="{{row.id}}" />
-      <span class="action-word">{{localize 'SCARMARK.Action.add'}}</span>
-      <select class="action-effect" name="{{row.effect.name}}">
-        <option value=""{{#if row.effect.blankSelected}} selected{{/if}}></option>
-        {{#each row.effect.groups}}
-        <optgroup label="{{label}}">
-          {{#each options}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
-        </optgroup>
-        {{/each}}
+      <span class="action-word">{{localize 'SCARMARK.Action.when'}}</span>
+      <select class="action-when" name="{{row.when.name}}">
+        {{#each row.when.options}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
       </select>
+      <select class="action-kind" name="{{row.kind.name}}">
+        {{#each row.kind.options}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
+      </select>
+      {{#if row.isTest}}
+      <select class="action-test" name="{{row.test.name}}">
+        {{#each row.test.options}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
+      </select>
+      {{else}}
+      <select class="action-effect" name="{{row.effect.name}}">
+        {{#each row.effect.options}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
+      </select>
+      {{/if}}
+      {{#if row.showOn}}
       <span class="action-word">{{localize 'SCARMARK.Action.on'}}</span>
       <select class="action-on" name="{{row.on.name}}">
         {{#each row.on.options}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
       </select>
+      {{/if}}
       {{#if row.showItem}}
       <select class="action-item" name="{{row.targetItem.name}}">
         {{#each row.targetItem.options}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
       </select>
       {{/if}}
-      <span class="action-word">{{localize 'SCARMARK.Action.when'}}</span>
-      <select class="action-when" name="{{row.when.name}}">
-        {{#each row.when.options}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
-      </select>
       <a class="action-delete" data-action="deleteAction" title="{{localize 'SCARMARK.Delete'}}"><i class="fa-solid fa-trash"></i></a>
     </li>
     {{/each}}

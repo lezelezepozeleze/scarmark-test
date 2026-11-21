@@ -8,7 +8,7 @@
 export { strikeDice, injuryLevelFor, armorAfterPiercing, armorWears, pickWeighted } from "./strike.mjs";
 export { capTarget, outcomeLevel } from "./d100.mjs";
 export { durationSeconds } from "./time.mjs";
-export { actionsFor } from "./actions.mjs";
+export { actionsFor, isTestAction, ownedEffectChanges } from "./actions.mjs";
 export { locationKey, covers, locationSide, hasSides, coversLocation, entryIndexesAt, holdsAt, wearIndexAt, averageCondition, startingCondition, splitBothSides, legacyCoverage, entryValue, entryFromValue, pickerEntries, armorLocationLabel } from "./locations.mjs";
 export { vitalWoundFor, severityKey, injuryFor, mendLabel, shockTarget, stunProtectionBonus } from "./wounds.mjs";
 export { spellLevelPenalty, invocationPenalty, spellTarget, invocationTarget, invocationFpCost, spellFatigue, mendWoundLevelDelta } from "./esoterics.mjs";

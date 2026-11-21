@@ -7,6 +7,7 @@ import { registerSettings } from "./foundry/settings.mjs";
 import { alignCoreCalendar } from "./foundry/calendar.mjs";
 import { registerDocuments } from "./foundry/documents.mjs";
 import { registerActorHooks } from "./foundry/actor-hooks.mjs";
+import { registerItemHooks } from "./foundry/item-hooks.mjs";
 import { registerChatHooks } from "./foundry/chat-hooks.mjs";
 import { registerEffectExpiry, startEffectExpiry } from "./foundry/effect-expiry.mjs";
 import { registerEffectKeyPicker, cacheSkillNames } from "./foundry/effect-key-picker.mjs";
@@ -50,4 +51,5 @@ Hooks.once("ready", async () => {
 registerEffectExpiry();
 registerEffectKeyPicker();
 registerActorHooks();
+registerItemHooks();
 registerChatHooks();

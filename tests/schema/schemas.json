@@ -1312,6 +1312,22 @@
               "blank": true
             }
           },
+          "kind": {
+            "type": "StringField",
+            "options": {
+              "required": true,
+              "initial": "effect",
+              "blank": true
+            }
+          },
+          "test": {
+            "type": "StringField",
+            "options": {
+              "required": true,
+              "initial": "",
+              "blank": true
+            }
+          },
           "effect": {
             "type": "StringField",
             "options": {
@@ -1548,6 +1564,22 @@
         "options": {},
         "fields": {
           "id": {
+            "type": "StringField",
+            "options": {
+              "required": true,
+              "initial": "",
+              "blank": true
+            }
+          },
+          "kind": {
+            "type": "StringField",
+            "options": {
+              "required": true,
+              "initial": "effect",
+              "blank": true
+            }
+          },
+          "test": {
             "type": "StringField",
             "options": {
               "required": true,
@@ -1803,6 +1835,22 @@
         "options": {},
         "fields": {
           "id": {
+            "type": "StringField",
+            "options": {
+              "required": true,
+              "initial": "",
+              "blank": true
+            }
+          },
+          "kind": {
+            "type": "StringField",
+            "options": {
+              "required": true,
+              "initial": "effect",
+              "blank": true
+            }
+          },
+          "test": {
             "type": "StringField",
             "options": {
               "required": true,
@@ -2162,6 +2210,22 @@
               "blank": true
             }
           },
+          "kind": {
+            "type": "StringField",
+            "options": {
+              "required": true,
+              "initial": "effect",
+              "blank": true
+            }
+          },
+          "test": {
+            "type": "StringField",
+            "options": {
+              "required": true,
+              "initial": "",
+              "blank": true
+            }
+          },
           "effect": {
             "type": "StringField",
             "options": {
@@ -2265,6 +2329,22 @@
               "blank": true
             }
           },
+          "kind": {
+            "type": "StringField",
+            "options": {
+              "required": true,
+              "initial": "effect",
+              "blank": true
+            }
+          },
+          "test": {
+            "type": "StringField",
+            "options": {
+              "required": true,
+              "initial": "",
+              "blank": true
+            }
+          },
           "effect": {
             "type": "StringField",
             "options": {
@@ -2360,6 +2440,22 @@
         "options": {},
         "fields": {
           "id": {
+            "type": "StringField",
+            "options": {
+              "required": true,
+              "initial": "",
+              "blank": true
+            }
+          },
+          "kind": {
+            "type": "StringField",
+            "options": {
+              "required": true,
+              "initial": "effect",
+              "blank": true
+            }
+          },
+          "test": {
             "type": "StringField",
             "options": {
               "required": true,

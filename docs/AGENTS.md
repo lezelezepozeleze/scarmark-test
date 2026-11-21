@@ -15,7 +15,7 @@ Read this file before changing anything. Follow it exactly. Other docs: README.m
 | module/foundry/ | lifecycle: settings, document registration, effect expiry, effect key picker, hooks |
 | templates/, css/, lang/ | Handlebars (templates/actor/parts and partials, templates/item/<type> and partials, templates/dialogs), stylesheets (see css/README.md), en.json and cs.json (a partial fallback, see below) |
 | packs/ | compendiums (LevelDB; read them with a LevelDB reader, not as text; see Packs below) |
-| scripts/imports/, scripts/macros/ | scripts/imports/ holds the migration macros that are still needed (migrate-armor-coverage.js, migrate-armor-conditions.js, migrate-toxicity.js; Report only / Apply); finished import macros live in git history. scripts/macros/ holds the world macros. scripts/ is not linted |
+| scripts/imports/, scripts/macros/ | scripts/imports/ holds the migration macros that are still needed (migrate-armor-coverage.js, migrate-armor-conditions.js, migrate-toxicity.js, migrate-consumable-actions.js; Report only / Apply); finished import macros live in git history. scripts/macros/ holds the world macros. scripts/ is not linted |
 | tests/ | `npm test` (unit, schema, render, golden), `npm run golden`, `npm run lint`, `npm run check:cycles`; tests/tools/ holds the snapshot capture and maintainer tools, tests/support/ the Foundry stub |
 
 ## Folder ownership

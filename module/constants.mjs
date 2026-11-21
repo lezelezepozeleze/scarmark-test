@@ -16,6 +16,8 @@ export const FLAGS = {
   shockGrit: "shockGrit",
   /** ChatMessage: the maneuver card payload ({maneuver, actorUuid, targetUuid}); older cards used flags.world.smManeuver. */
   maneuver: "maneuver",
+  /** ActiveEffect on an item: true when an "owned" action made the effect transfer to the owner (helpers/item-actions.mjs syncOwnedEffects). */
+  ownedByAction: "ownedByAction",
   /** Combat: last round for which combat Fatigue and bleeding were applied. */
   lastFatigueRound: "lastFatigueRound",
   /** ActiveEffect: world time at which a consumed item's effect expires (see foundry/effect-expiry.mjs). */

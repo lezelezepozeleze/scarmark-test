@@ -1,11 +1,17 @@
-/** Running the actions of an item: "add <effect> on <target> when: <trigger>". Using a usable item sets off its "used" actions. */
-import { ACTION_TARGET_SELECTED_TOKEN, ACTION_TARGET_SELF, ACTION_TARGET_ITEM, ACTION_TRIGGER_USED } from "../config/index.mjs";
-import { actionsFor } from "../rules/index.mjs";
+/** Running the actions of an item: "when <trigger> add <effect> on <target>" or "when <trigger> roll <test>". Using a usable item sets off its "used" actions, opening the sheet of an item the character carries its "inspected" ones, consuming a consumable its "consumed" ones (helpers/consume.mjs). */
+import { ACTION_TARGET_SELECTED_TOKEN, ACTION_TARGET_SELF, ACTION_TARGET_ITEM, ACTION_TRIGGER_USED, ACTION_TRIGGER_INSPECTED, ACTION_TRIGGERS, ACTION_TESTS } from "../config/index.mjs";
+import { FLAGS } from "../constants.mjs";
+import { actionsFor, isTestAction, ownedEffectChanges, capTarget } from "../rules/index.mjs";
+import { esc } from "./escape.mjs";
 import { stampEffectData, currentWorldTime } from "./effect-library.mjs";
+import { rollD100Test } from "./dice/shared.mjs";
+
+/** The actor that carries the item (null for a loose item). */
+const ownerOf = (item) => item.parent?.documentName === "Actor" ? item.parent : null;
 
 /** The documents (actors, or one item of the owner) an action's "on" names for this item; empty when there are none. */
 function targetsOf(action, item) {
-  const owner = item.parent?.documentName === "Actor" ? item.parent : null;
+  const owner = ownerOf(item);
   if (action.on === ACTION_TARGET_SELF) return owner ? [owner] : [];
   if (action.on === ACTION_TARGET_ITEM) {
     const target = owner?.items.get(action.targetItem);
@@ -23,47 +29,83 @@ const NO_TARGET_MESSAGE = {
 };
 
 /**
- * What the actions of `item` that fire on `trigger` would do: one entry per action, { on, data, targets }, with the effect already stamped for putting on an actor. Actions that cannot run (the effect is gone, nobody to target) are reported to the user and left out.
+ * What the add-effect actions of `item` that fire on `trigger` would do: one entry per action, { trigger, item, effectName, on, data, targets }, with the effect already stamped for putting on an actor. Actions that cannot run (the effect is gone, nobody to target) are reported to the user and left out.
  */
 export async function planActions(item, trigger) {
   const plan = [];
-  for (const action of actionsFor(item.system.actions, trigger)) {
-    const effect = await fromUuid(action.effect);
+  for (const action of actionsFor(item.system.actions, trigger).filter(a => !isTestAction(a))) {
+    const effect = item.effects.get(action.effect);
     if (!effect) {
       ui.notifications.warn(game.i18n.format("SCARMARK.Action.effectMissing", { item: item.name }));
       continue;
     }
-    const targets = targetsOf(action, item);
+    // A trigger that asks for no target (consumed, owned) always acts on the actor that carries the item.
+    const on = ACTION_TRIGGERS[trigger]?.target === false ? ACTION_TARGET_SELF : action.on;
+    const targets = targetsOf({ ...action, on }, item);
     if (!targets.length) {
-      ui.notifications.warn(game.i18n.localize(NO_TARGET_MESSAGE[action.on] ?? "SCARMARK.Action.noTarget"));
+      ui.notifications.warn(game.i18n.localize(NO_TARGET_MESSAGE[on] ?? "SCARMARK.Action.noTarget"));
       continue;
     }
-    plan.push({ on: action.on, data: stampEffectData(effect.toObject(), { now: currentWorldTime(), origin: item.uuid }), targets });
+    plan.push({ trigger, item, effectName: effect.name, on, data: stampEffectData(effect.toObject(), { now: currentWorldTime(), origin: item.uuid }), targets });
   }
   return plan;
 }
 
-/** Put the effect of every plan entry on its targets (the ones the user owns). An effect put on an item is made to transfer, so it applies to the actor that owns the item. Returns how many effects were added. */
+/** The public chat card of an action that added an effect: "<actor> used <item>. <target> is now <effect>." (wording per trigger, config/actions.mjs). */
+async function postActionCard(entry, targets) {
+  const card = ACTION_TRIGGERS[entry.trigger]?.card;
+  const actor = ownerOf(entry.item);
+  if (!card || !actor) return;
+  const text = game.i18n.format(targets.length > 1 ? card.many : card.one, { actor: actor.name, item: entry.item.name, target: targets.map(target => target.name).join(", "), effect: entry.effectName });
+  await ChatMessage.create({ speaker: ChatMessage.getSpeaker({ actor }), content: `<div class="scarmark-card"><div class="card-line">${esc(text)}</div></div>` });
+}
+
+/** Put the effect of every plan entry on its targets (the ones the user owns) and post its chat card (not for an entry marked `silent`). An effect put on an item is made to transfer, so it applies to the actor that owns the item. Returns how many effects were added. */
 export async function applyPlan(plan) {
   let applied = 0;
-  for (const { data, targets } of plan) {
-    for (const target of targets) {
+  for (const entry of plan) {
+    const done = [];
+    for (const target of entry.targets) {
       if (!target.isOwner) {
         ui.notifications.warn(game.i18n.format("SCARMARK.Action.noPermission", { actor: target.name }));
         continue;
       }
-      const copy = foundry.utils.deepClone(data);
+      const copy = foundry.utils.deepClone(entry.data);
       if (target.documentName === "Item") copy.transfer = true;
       await target.createEmbeddedDocuments("ActiveEffect", [copy]);
-      applied++;
+      done.push(target);
     }
+    applied += done.length;
+    if (done.length && !entry.silent) await postActionCard(entry, done);
   }
   return applied;
 }
 
-/** Set off the actions of `item` that fire on `trigger`. Returns how many effects were added. */
+/** Roll the test actions of `item` that fire on `trigger`: d100 against the ESL of the test's skill of the carrying character, right now. The roll posts its own card. Returns how many tests were rolled. */
+export async function rollTests(item, trigger) {
+  let rolled = 0;
+  for (const action of actionsFor(item.system.actions, trigger).filter(isTestAction)) {
+    const actor = ownerOf(item);
+    if (!actor) {
+      ui.notifications.warn(game.i18n.localize("SCARMARK.Action.noOwner"));
+      continue;
+    }
+    const wanted = ACTION_TESTS[action.test]?.skill;
+    const skill = wanted && actor.items.find(i => i.type === "skill" && i.name.toLowerCase() === wanted.toLowerCase());
+    if (!skill) {
+      ui.notifications.warn(game.i18n.format("SCARMARK.Action.noSkill", { actor: actor.name, skill: wanted ?? action.test }));
+      continue;
+    }
+    await rollD100Test(actor, `${esc(skill.name)} ${game.i18n.localize("SCARMARK.Test")}`, capTarget(skill.system.esl));
+    rolled++;
+  }
+  return rolled;
+}
+
+/** Set off the actions of `item` that fire on `trigger`: the effects first, then the tests. Returns how many effects were added and tests rolled. */
 export async function runActions(item, trigger) {
-  return applyPlan(await planActions(item, trigger));
+  const applied = await applyPlan(await planActions(item, trigger));
+  return applied + await rollTests(item, trigger);
 }
 
 /** Use an item: set off its "when used" actions. */
@@ -78,4 +120,26 @@ export async function useItem(item) {
     console.error("Scarmark | use failed", err);
     ui.notifications.error(game.i18n.format("SCARMARK.Gear.useFailed", { error: err.message }));
   }
+}
+
+/** The character that has the item opened its sheet: set off its "when inspected" actions. Does nothing for the GM (who opens items to edit them) or for an item that is not on a character. Called once when the sheet is first rendered. */
+export async function inspectItem(item) {
+  if (game.user.isGM || !item.isOwner || !ownerOf(item)) return;
+  if (!actionsFor(item.system.actions, ACTION_TRIGGER_INSPECTED).length) return;
+  try {
+    await runActions(item, ACTION_TRIGGER_INSPECTED);
+  } catch (err) {
+    console.error("Scarmark | inspect failed", err);
+  }
+}
+
+/**
+ * Make the effects named by the item's "owned" actions transfer to the owner, and undo it for the ones whose action is gone (see rules/actions.mjs ownedEffectChanges). Called when the actions of an item change (foundry/item-hooks.mjs). Returns how many effects were updated.
+ */
+export async function syncOwnedEffects(item) {
+  const scope = `flags.${FLAGS.scope}.${FLAGS.ownedByAction}`;
+  const effects = item.effects.map(effect => ({ id: effect.id, transfer: Boolean(effect.transfer), managed: effect.getFlag(FLAGS.scope, FLAGS.ownedByAction) === true }));
+  const updates = ownedEffectChanges(effects, item.system.actions).map(change => ({ _id: change.id, transfer: change.transfer, [scope]: change.managed }));
+  if (updates.length) await item.updateEmbeddedDocuments("ActiveEffect", updates);
+  return updates.length;
 }

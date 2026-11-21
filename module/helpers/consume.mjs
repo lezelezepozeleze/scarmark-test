@@ -1,7 +1,8 @@
 /** Consuming an item: its Active Effects (plus its toxicity) go onto the actor with their countdown started, and one unit is spent. */
-import { TOXICITY_SKILL } from "../config/index.mjs";
-import { durationSeconds } from "../rules/index.mjs";
+import { TOXICITY_SKILL, ACTION_TRIGGER_CONSUMED, ACTION_TARGET_SELF } from "../config/index.mjs";
+import { durationSeconds, actionsFor } from "../rules/index.mjs";
 import { stampEffectData, currentWorldTime } from "./effect-library.mjs";
+import { planActions, applyPlan, rollTests } from "./item-actions.mjs";
 
 /**
  * Add the Vitality penalty of a toxicity to the effects that are about to be applied: it goes into the longest-lasting effect, so it ends with it. An item with no effect gets a permanent one of its own. Returns the same array (mutated) when there is a toxicity, as given otherwise.
@@ -19,13 +20,31 @@ export function withToxicity(effects, { toxicity, name, img, uuid }) {
   return effects;
 }
 
+/**
+ * Consume by the item's "when consumed" actions. The toxicity goes into the longest-lasting effect that lands on the consumer (or stands alone, permanent, when no action does); the tests are rolled after the effects are on, so a Vitality test is against the Vitality the toxicity has just lowered. Returns how many effects were added and tests rolled.
+ */
+async function applyConsumedActions(actor, item, info) {
+  const plan = await planActions(item, ACTION_TRIGGER_CONSUMED);
+  const own = plan.filter(entry => entry.on === ACTION_TARGET_SELF).map(entry => entry.data);
+  const withPenalty = withToxicity(own, info);
+  if (!own.length && withPenalty.length) plan.push({ on: ACTION_TARGET_SELF, data: withPenalty[0], targets: [actor], silent: true });
+  const applied = await applyPlan(plan);
+  return applied + await rollTests(item, ACTION_TRIGGER_CONSUMED);
+}
+
 /** Consume one unit of a consumable: apply its effects to the actor, then reduce its quantity (delete at the last one). Errors are reported to the user, not thrown. */
 export async function consumeItem(actor, item) {
   const now = currentWorldTime();
   const info = { toxicity: Number(item.system.toxicity) || 0, name: item.name, img: item.img, uuid: item.uuid };
   const buildEffects = () => withToxicity(item.effects.contents.map(e => stampEffectData(e.toObject(), { now, origin: item.uuid })), info);
   try {
-    const effects = buildEffects();
+    // An item with actions is consumed by them (only its "consumed" ones fire); an older consumable with none puts all its effects on the consumer. When "consumed" actions exist but none could run, nothing is spent.
+    const byActions = (item.system.actions?.length ?? 0) > 0;
+    if (byActions) {
+      const done = await applyConsumedActions(actor, item, info);
+      if (!done && actionsFor(item.system.actions, ACTION_TRIGGER_CONSUMED).length) return;
+    }
+    const effects = byActions ? [] : buildEffects();
     if (effects.length) {
       try {
         await actor.createEmbeddedDocuments("ActiveEffect", effects);

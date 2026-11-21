@@ -2,6 +2,17 @@
 
 All notable changes to the Scarmark system.
 
+## 1.1.3-beta - 2026-11-21
+
+- Item model: an item's Effects tab is the list of what the item can do, and its Actions tab says when each effect happens. An action now reads "when <trigger> add <effect> [on <target>]". The effect roll-down lists only the item's own effects (use the Add menu of the Effects tab to bring one in from the effect library); the stored value is the effect id.
+- Triggers: Owned (the effect applies by itself while the actor owns the item: the effect is made to transfer, and made not to again when the action is removed; an effect that transfers on its own is never touched), Used (a Usable item; on Self, Selected token or Item) and Consumed (a Consumable item; always on the consumer, so no "on" roll-down). "on" and the item picker only show for Used.
+- Consume: an item with actions is consumed by its "when Consumed" actions only. Toxicity goes into the longest-lasting effect they put on the consumer (or is a permanent effect of its own when there is none). If Consumed actions exist but none could run (an effect was deleted) the item is not spent. A consumable with no actions at all works as before: all its effects go on the consumer.
+- Effects added on an item's Effects tab (blank or from the library) no longer transfer to the owner by default.
+- New migration macro `scripts/imports/migrate-consumable-actions.js` (Report only / Apply): gives every older consumable with effects and no actions one "when Consumed add <effect>" action per effect, and makes those effects non-transferring. Compendia, world items and actors, unlinked tokens; safe to repeat.
+- New trigger Inspected: the character that has the item in its inventory opens its sheet (the GM does not count; once, when the sheet opens). Like Used it asks "on" (Self, Selected token, Item). Effects added again each time it is opened; a guard against that comes later.
+- New "do" roll-down on every action: add effect, or roll test. A test action rolls a d100 against the character's skill ESL right now; the only test for now is Vitality (more are one line each in `config/actions.mjs`). Consuming a consumable with toxicity and a "when Consumed roll Vitality test" action lowers Vitality first (toxicity) and then rolls against the lowered Vitality. Test outcomes (success, critical success, fail, critical fail) come later.
+- Chat cards: an action that adds an effect posts a public card, "Aldric used Razor. Selected Token is now Freshly shaved." (inspected, used and consumed; the owned trigger posts none; a test posts its own roll card).
+
 ## 1.1.2-beta - 2026-11-21
 
 - Actions: the "on" roll-down offers Self (the actor that carries the item), Selected token and Item. Choosing Item adds a second roll-down listing every item of the carrying actor; the effect is then put on that item and made to transfer, so it applies to the actor while they own the item. The action gets a `targetItem` field (the item id). The "when" roll-down still has only "Used" (a Usable item); "Consumed" is left for later and Consume works exactly as before.

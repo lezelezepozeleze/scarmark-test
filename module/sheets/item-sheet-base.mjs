@@ -1,18 +1,19 @@
 /** The base of every item sheet: the Details tab (subclass-provided), the common Effects tab and the portrait picker. */
 import { FORM_LIMITS } from "../config/index.mjs";
 import { enhanceAccessibility, wireButtonKeys } from "./a11y.mjs";
-import { onEditImage, effectIdOf, toggleEffect, openEffect } from "./actions/effects.mjs";
+import { onEditImage, effectIdOf, blankEffectData, toggleEffect, openEffect } from "./actions/effects.mjs";
 import { openEffectMenu } from "./effect-menu.mjs";
 import { copyLibraryEffect } from "../helpers/effect-library.mjs";
+import { inspectItem } from "../helpers/item-actions.mjs";
 import { ActionsPanelMixin } from "./actions/action-panel.mjs";
 import { itemTabs, headerPart, tabsPart, effectsPart, actionsPart } from "./item-layout.mjs";
 
 const { HandlebarsApplicationMixin } = foundry.applications.api;
 const { ItemSheetV2 } = foundry.applications.sheets;
 
-/** The Add button of the Effects tab: opens the effect menu (a blank effect, then the effect library), the same one as on the actor sheet; a library effect is copied onto the item. */
+/** The Add button of the Effects tab: opens the effect menu (a blank effect, then the effect library), the same one as on the actor sheet. Effects added here are the list of what the item can do: they do not transfer to the owner (an "owned" action does that) and a library effect is copied as it is. */
 function onCreateEffect(event, target) {
-  return openEffectMenu(this, target, copyLibraryEffect);
+  return openEffectMenu(this, target, { addLibraryEffect: copyLibraryEffect, blankData: () => ({ ...blankEffectData(), transfer: false }) });
 }
 
 /** Open the effect of this row. */
@@ -68,6 +69,7 @@ export default class ScarmarkItemSheetBase extends ActionsPanelMixin(HandlebarsA
   _onFirstRender(context, options) {
     super._onFirstRender(context, options);
     wireButtonKeys(this.element);
+    inspectItem(this.document);
   }
 
   /** @override Label links and button roles for the rendered HTML (sheets/a11y.mjs). */

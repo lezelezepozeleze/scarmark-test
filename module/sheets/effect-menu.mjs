@@ -8,9 +8,11 @@ import { blankEffectData } from "./actions/effects.mjs";
  *
  * @param {ApplicationV2} sheet the actor sheet
  * @param {HTMLElement} target the Add button
- * @param {(document: Document, uuid: string) => Promise<object|null>} [addLibraryEffect] what picking a library effect does: put a started copy on an actor (the default) or a plain copy on an item
+ * @param {object} [how]
+ * @param {(document: Document, uuid: string) => Promise<object|null>} [how.addLibraryEffect] what picking a library effect does: put a started copy on an actor (the default) or a plain copy on an item
+ * @param {() => object} [how.blankData] the data of a blank effect
  */
-export async function openEffectMenu(sheet, target, addLibraryEffect = applyLibraryEffect) {
+export async function openEffectMenu(sheet, target, { addLibraryEffect = applyLibraryEffect, blankData = blankEffectData } = {}) {
   const open = sheet.element.querySelector(".effect-add-menu");
   if ( open ) return open.remove();
 
@@ -37,7 +39,7 @@ export async function openEffectMenu(sheet, target, addLibraryEffect = applyLibr
     if ( !entry ) return;
     close();
     if ( entry.dataset.blank ) {
-      sheet.document.createEmbeddedDocuments("ActiveEffect", [blankEffectData()]);
+      sheet.document.createEmbeddedDocuments("ActiveEffect", [blankData()]);
     } else if ( !await addLibraryEffect(sheet.document, entry.dataset.uuid) ) {
       ui.notifications.warn(game.i18n.localize("SCARMARK.Effect.libraryMissing"));
     }
