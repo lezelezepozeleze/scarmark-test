@@ -27,10 +27,11 @@ test("holdsAt and wearIndexAt: a location at condition 0 no longer protects, the
   assert.deepStrictEqual([wearIndexAt(coverage, "head"), wearIndexAt(coverage, "arm", "left"), wearIndexAt(coverage, "arm", "right")], [-1, 1, -1]);
 });
 
-test("averageCondition: the rounded average of the entries, null without entries", () => {
+test("averageCondition: the average of the entries rounded down, null without entries", () => {
   assert.strictEqual(averageCondition([entry("head", "", 10), entry("arm", "left", 5), entry("arm", "right", 6)]), 7);
   assert.strictEqual(averageCondition([entry("head", "", 10)]), 10);
-  assert.strictEqual(averageCondition([entry("head", "", 0), entry("chest", "", 1)]), 1, "0.5 rounds up");
+  assert.strictEqual(averageCondition([entry("head", "", 0), entry("chest", "", 1)]), 0, "0.5 is shown as 0");
+  assert.deepStrictEqual([[2, 2, 3], [2, 3, 3], [2, 2, 2], [3, 3, 3, 2]].map(values => averageCondition(values.map(condition => entry("arm", "", condition)))), [2, 2, 2, 2], "2.33, 2.67, 2 and 2.75 all show as 2");
   assert.strictEqual(averageCondition([]), null);
   assert.strictEqual(averageCondition(undefined), null);
 });
@@ -41,7 +42,7 @@ test("startingCondition: the original durability, else the current one, else the
 
 test("the durability of a piece is derived from its conditions; Natural armor and a piece with no coverage keep theirs", () => {
   const prepare = (data) => { const system = Object.assign(new ScarmarkArmorData(), data); system.prepareDerivedData(); return system.quality; };
-  assert.strictEqual(prepare({ quality: 99, coverage: [entry("head", "", 10), entry("chest", "", 5)] }), 8);
+  assert.strictEqual(prepare({ quality: 99, coverage: [entry("head", "", 10), entry("chest", "", 5)] }), 7, "7.5 is shown as 7");
   assert.strictEqual(prepare({ quality: QUALITY_PERMANENT, coverage: [entry("head", "", 0)] }), QUALITY_PERMANENT);
   assert.strictEqual(prepare({ quality: 4, coverage: [] }), 4);
 });

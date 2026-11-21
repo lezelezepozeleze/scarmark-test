@@ -2,6 +2,10 @@
 
 All notable changes to the Scarmark system.
 
+## 1.1.11-beta - 2026-11-21
+
+- Armor durability is the average condition of the locations rounded down, not to the nearest whole number: 2.1, 2.5 and 2.9 all show as 2, and 7.5 shows as 7. The formula is otherwise the same; the number still comes from the stored conditions of the locations, and a location that is down to its last point keeps protecting.
+
 ## 1.1.10-beta - 2026-11-21
 
 - Fix: saving the effect sheet failed with "can't access lexical declaration 'picker' before initialization". The rule for dropping change rows after picking another type is now a plain function (`rowsForType`) with a test.

@@ -496,7 +496,7 @@
       "removeLocation": "Remove location",
       "bothSides": "both sides",
       "originalQuality": "Original durability",
-      "qualityDerived": "Calculated: the average condition of the locations below"
+      "qualityDerived": "Calculated: the average condition of the locations below, rounded down"
     },
     "ArmorLocation": {
       "locationType": "Location Type",

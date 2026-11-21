@@ -80,7 +80,7 @@ export const holdsAt = (coverage, type, side = "") => entryIndexesAt(coverage, t
 export const wearIndexAt = (coverage, type, side = "") => entryIndexesAt(coverage, type, side).find(i => (coverage[i].condition ?? 0) > 0) ?? -1;
 
 /**
- * The durability of a piece: the average condition of its coverage entries, rounded. null when it has no entries (nothing to average).
+ * The durability of a piece: the average condition of its coverage entries, rounded down (2.1, 2.5 and 2.9 all show as 2). null when it has no entries (nothing to average).
  *
  * @param {{condition?: number}[]|undefined} coverage
  * @returns {number|null}
@@ -88,7 +88,7 @@ export const wearIndexAt = (coverage, type, side = "") => entryIndexesAt(coverag
 export function averageCondition(coverage) {
   const entries = Array.from(coverage ?? []);
   if (!entries.length) return null;
-  return Math.round(entries.reduce((sum, entry) => sum + (entry.condition ?? 0), 0) / entries.length);
+  return Math.floor(entries.reduce((sum, entry) => sum + (entry.condition ?? 0), 0) / entries.length);
 }
 
 /**
