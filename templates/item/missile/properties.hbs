@@ -1,0 +1,80 @@
+{{#> "systems/scarmark-test/templates/item/partials/details-tab.hbs"}}
+
+  {{> "systems/scarmark-test/templates/item/partials/container-select.hbs"}}
+
+  <div class="field missile-velocity">
+    <label>{{localize 'SCARMARK.Missile.velocity'}}</label>
+    <select name="system.velocity">
+      {{#each missileVelocities as |label key|}}
+      <option value="{{key}}" {{#if (eq ../system.velocity key)}}selected{{/if}}>{{localize label}}</option>
+      {{/each}}
+    </select>
+  </div>
+
+  <div class="gear-row">
+    {{> "systems/scarmark-test/templates/item/partials/quantity-weight-value.hbs"}}
+  </div>
+
+  <div class="gear-row">
+    <div class="field missile-quality">
+      <label>{{localize 'SCARMARK.Weapon.quality'}}</label>
+      <input type="number" step="1" min="0" max="{{limits.qualityMax}}" name="system.quality" value="{{system.quality}}" />
+    </div>
+    <div class="field missile-aspect">
+      <label>{{localize 'SCARMARK.Missile.aspect'}}</label>
+      <select name="system.aspect">
+        {{#each damageAspects as |label key|}}
+        <option value="{{key}}" {{#if (eq ../system.aspect key)}}selected{{/if}}>{{localize label}}</option>
+        {{/each}}
+      </select>
+    </div>
+    <div class="field missile-skill">
+      <label>{{localize 'SCARMARK.Missile.associatedSkill'}}</label>
+      <select name="system.associatedSkill">
+        {{#each missileSkills as |label key|}}
+        <option value="{{key}}" {{#if (eq ../system.associatedSkill key)}}selected{{/if}}>{{localize label}}</option>
+        {{/each}}
+      </select>
+    </div>
+  </div>
+
+  <div class="gear-row">
+    <div class="field weapon-specialization">
+      <label>{{localize 'SCARMARK.Weapon.specialization'}}</label>
+      <input type="number" step="1" name="system.specialization" value="{{system.specialization}}" />
+    </div>
+  </div>
+
+  <div class="field artifact-toggle">
+    <label class="checkbox-label">
+      <input type="checkbox" name="system.magic" {{#if system.magic}}checked{{/if}} />
+      {{localize 'SCARMARK.Missile.magic'}}
+    </label>
+    <label class="artifact-class">
+      {{localize 'SCARMARK.Artifact.class'}}
+      <input type="number" name="system.spellClass" value="{{system.spellClass}}" step="1" min="{{limits.esotericMin}}" max="{{limits.spellClassMax}}" />
+    </label>
+  </div>
+
+  {{> "systems/scarmark-test/templates/item/partials/notes-field.hbs" cls="note"}}
+
+  <div class="missile-range-grid">
+    <span class="grid-corner"></span>
+    <span class="grid-head">{{localize 'SCARMARK.Missile.short'}}</span>
+    <span class="grid-head">{{localize 'SCARMARK.Missile.medium'}}</span>
+    <span class="grid-head">{{localize 'SCARMARK.Missile.long'}}</span>
+    <span class="grid-head">{{localize 'SCARMARK.Missile.extreme'}}</span>
+
+    <span class="grid-label">{{localize 'SCARMARK.Missile.range'}}</span>
+    <input type="number" step="1" name="system.range.short" value="{{system.range.short}}" />
+    <input type="number" step="1" name="system.range.medium" value="{{system.range.medium}}" />
+    <input type="number" step="1" name="system.range.long" value="{{system.range.long}}" />
+    <input type="number" step="1" name="system.range.extreme" value="{{system.range.extreme}}" />
+
+    <span class="grid-label">{{localize 'SCARMARK.Missile.impact'}}</span>
+    <input type="number" step="1" name="system.impact.short" value="{{system.impact.short}}" />
+    <input type="number" step="1" name="system.impact.medium" value="{{system.impact.medium}}" />
+    <input type="number" step="1" name="system.impact.long" value="{{system.impact.long}}" />
+    <input type="number" step="1" name="system.impact.extreme" value="{{system.impact.extreme}}" />
+  </div>
+{{/"systems/scarmark-test/templates/item/partials/details-tab.hbs"}}

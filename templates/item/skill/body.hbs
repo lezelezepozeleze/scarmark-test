@@ -1,0 +1,53 @@
+<div class="skill-body">
+
+  <header class="item-header skill-header">
+    {{> "systems/scarmark-test/templates/item/partials/portrait.hbs"}}
+    <div class="skill-header-main">
+      {{> "systems/scarmark-test/templates/item/partials/name-input.hbs"}}
+      <div class="skill-header-row">
+        <div class="field skill-category">
+          <label>{{localize 'SCARMARK.Skill.category'}}</label>
+          <select name="system.category">
+            <option value="physical" {{#if (eq system.category "physical")}}selected{{/if}}>{{localize 'SCARMARK.Skill.categoryPhysical'}}</option>
+            <option value="communication" {{#if (eq system.category "communication")}}selected{{/if}}>{{localize 'SCARMARK.Skill.categoryCommunication'}}</option>
+            <option value="combat" {{#if (eq system.category "combat")}}selected{{/if}}>{{localize 'SCARMARK.Skill.categoryCombat'}}</option>
+            <option value="craft" {{#if (eq system.category "craft")}}selected{{/if}}>{{localize 'SCARMARK.Skill.categoryCraft'}}</option>
+            <option value="religion" {{#if (eq system.category "religion")}}selected{{/if}}>{{localize 'SCARMARK.Skill.categoryReligion'}}</option>
+            <option value="magic" {{#if (eq system.category "magic")}}selected{{/if}}>{{localize 'SCARMARK.Skill.categoryMagic'}}</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <hr class="section-divider" />
+
+  <div class="skill-levels">
+    <div class="skill-level-box">
+      <label>{{localize 'SCARMARK.Skill.sbFull'}}</label>
+      <div class="skill-level-value">{{system.sb}}</div>
+    </div>
+    <div class="skill-level-box">
+      <label>{{localize 'SCARMARK.Skill.slFull'}}</label>
+      <input type="number" step="1" name="system.level" value="{{system.level}}" />
+    </div>
+    {{#if (eq system.category "religion")}}
+    <div class="skill-level-box">
+      <label>{{localize 'SCARMARK.Skill.fpFull'}}</label>
+      <input type="number" step="1" name="system.faithPoints" value="{{system.faithPoints}}" />
+    </div>
+    {{/if}}
+  </div>
+
+  {{> "systems/scarmark-test/templates/item/partials/skill-attributes.hbs"}}
+
+  {{> "systems/scarmark-test/templates/item/partials/sunsign-bonuses.hbs"}}
+
+  {{> "systems/scarmark-test/templates/item/partials/notes-field.hbs" cls="skill-note"}}
+
+  <div class="field skill-description">
+    <h3>{{localize 'SCARMARK.Description'}}</h3>
+    <prose-mirror name="system.description" value="{{system.description}}"></prose-mirror>
+  </div>
+
+</div>

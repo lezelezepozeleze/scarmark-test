@@ -1,0 +1,73 @@
+{{#> "systems/scarmark-test/templates/item/partials/details-tab.hbs"}}
+
+  <div class="in-container-row">
+    {{> "systems/scarmark-test/templates/item/partials/container-select.hbs"}}
+    <div class="checkbox-toggles">
+      <label class="checkbox-label">
+        <input type="checkbox" name="system.isShield" {{#if system.isShield}}checked{{/if}} />
+        {{localize 'SCARMARK.Weapon.isShield'}}
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" name="system.broken" {{#if system.broken}}checked{{/if}} />
+        {{localize 'SCARMARK.Weapon.broken'}}
+      </label>
+    </div>
+  </div>
+
+  <div class="gear-row">
+    {{> "systems/scarmark-test/templates/item/partials/quantity-weight-value.hbs"}}
+  </div>
+
+  <div class="gear-row">
+    <div class="field weapon-quality">
+      <label>{{localize 'SCARMARK.Weapon.quality'}}</label>
+      <input type="number" step="1" min="0" max="{{limits.qualityMax}}" name="system.quality" value="{{system.quality}}" />
+    </div>
+    <div class="field weapon-attack">
+      <label>{{localize 'SCARMARK.Weapon.attack'}}</label>
+      <input type="number" step="1" name="system.attack" value="{{system.attack}}" />
+    </div>
+    <div class="field weapon-defense">
+      <label>{{localize 'SCARMARK.Weapon.defense'}}</label>
+      <input type="number" step="1" name="system.defense" value="{{system.defense}}" />
+    </div>
+  </div>
+
+  <div class="gear-row">
+    <div class="field weapon-blunt">
+      <label>{{localize 'SCARMARK.Aspect.blunt'}}</label>
+      <input type="number" step="1" min="-1" name="system.impact.blunt" value="{{system.impact.blunt}}" />
+    </div>
+    <div class="field weapon-edged">
+      <label>{{localize 'SCARMARK.Aspect.edged'}}</label>
+      <input type="number" step="1" min="-1" name="system.impact.edged" value="{{system.impact.edged}}" />
+    </div>
+    <div class="field weapon-piercing">
+      <label>{{localize 'SCARMARK.Aspect.piercing'}}</label>
+      <input type="number" step="1" min="-1" name="system.impact.piercing" value="{{system.impact.piercing}}" />
+    </div>
+    <div class="field weapon-fire">
+      <label>{{localize 'SCARMARK.Aspect.fire'}}</label>
+      <input type="number" step="1" min="-1" name="system.impact.fire" value="{{system.impact.fire}}" />
+    </div>
+  </div>
+
+  <div class="gear-row">
+    <div class="field weapon-specialization">
+      <label>{{localize 'SCARMARK.Weapon.specialization'}}</label>
+      <input type="number" step="1" name="system.specialization" value="{{system.specialization}}" />
+    </div>
+    <div class="field weapon-skill">
+      <label>{{localize 'SCARMARK.Weapon.associatedSkill'}}</label>
+      <select name="system.associatedSkill">
+        {{#each weaponSkills as |label key|}}
+        <option value="{{key}}" {{#if (eq ../system.associatedSkill key)}}selected{{/if}}>{{localize label}}</option>
+        {{/each}}
+      </select>
+    </div>
+  </div>
+
+  {{> "systems/scarmark-test/templates/item/partials/notes-field.hbs" cls="note"}}
+
+  {{> "systems/scarmark-test/templates/item/partials/artifact-fields.hbs"}}
+{{/"systems/scarmark-test/templates/item/partials/details-tab.hbs"}}

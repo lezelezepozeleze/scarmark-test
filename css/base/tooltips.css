@@ -1,0 +1,57 @@
+/* Floating tooltip with the item details shown on gear rows. */
+
+.scarmark.sm-item-tooltip {
+  display: none;
+  position: fixed;
+  pointer-events: none;
+  /* Above every Foundry application window (their z-index rises with each focus) and the canvas HUD, so a tooltip is never hidden. */
+  z-index: 100000;
+  box-sizing: border-box;
+  max-width: 85vw;
+  background: var(--sm-bg);
+  color: var(--sm-text);
+  border: 1px solid var(--sm-accent);
+  box-shadow: var(--sm-shadow-popup);
+  /* Not var(--sm-font-body): that is "Signika", sans-serif and would change the rendered font; the tooltip sits on a bare .scarmark root, outside .sheet, so it never got the body font. */
+  font: 12px/1.5 sans-serif;
+}
+
+.sm-item-tooltip {
+  width: 310px;
+  max-height: 75vh;
+  overflow: hidden;
+  padding: 11px 13px;
+  border-radius: 7px;
+}
+
+.sm-item-tooltip h3 {
+  font-size: 15px;
+  margin: 0 0 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--sm-accent);
+}
+
+.sm-item-tooltip .detail {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 2px 0;
+}
+
+.sm-item-tooltip .detail span:first-child {
+  color: var(--sm-text-muted);
+  flex-shrink: 0;
+}
+
+.sm-item-tooltip .detail span:last-child {
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.sm-item-tooltip .notes {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  border-top: 1px solid var(--sm-border);
+  margin-top: 7px;
+  padding-top: 7px;
+}

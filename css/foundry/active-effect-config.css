@@ -1,0 +1,8 @@
+/* Key picker injected into the Active Effect config Changes tab (sits above the
+   free-text key input so both a dropdown and manual entry are available). */
+.scarmark-key-picker {
+  display: block;
+  width: 100%;
+  margin-bottom: 3px;
+  font-size: 0.85rem;
+}

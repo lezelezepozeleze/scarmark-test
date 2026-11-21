@@ -1,0 +1,7 @@
+node_modules/
+tests/golden/local/
+
+# LevelDB runtime files of the packs: Foundry creates and rewrites them whenever it opens the world. The .log, .ldb, CURRENT and MANIFEST files hold the data and stay tracked.
+packs/**/LOCK
+packs/**/LOG
+packs/**/LOG.old

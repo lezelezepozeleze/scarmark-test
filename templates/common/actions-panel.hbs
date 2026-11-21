@@ -1,0 +1,36 @@
+{{!-- The Actions panel: one "add <effect> on <target> when: <trigger>" row per action, with the Add link. Parameter: panel - the view model from prepareActionsPanel (sheets/actions/action-panel.mjs). Not tied to item sheets: the data path comes from panel.path. --}}
+<div class="actions-panel" data-actions-path="{{panel.path}}">
+  <div class="actions-header">
+    <a class="add-action" data-action="createAction">
+      <i class="fa-solid fa-plus"></i> {{localize 'SCARMARK.Add'}}
+    </a>
+  </div>
+  <ol class="actions-list">
+    {{#each panel.rows as |row index|}}
+    <li class="action-entry" data-index="{{index}}">
+      <input type="hidden" name="{{row.prefix}}.id" value="{{row.id}}" />
+      <span class="action-word">{{localize 'SCARMARK.Action.add'}}</span>
+      <select class="action-effect" name="{{row.effect.name}}">
+        <option value=""{{#if row.effect.blankSelected}} selected{{/if}}></option>
+        {{#each row.effect.groups}}
+        <optgroup label="{{label}}">
+          {{#each options}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
+        </optgroup>
+        {{/each}}
+      </select>
+      <span class="action-word">{{localize 'SCARMARK.Action.on'}}</span>
+      <select class="action-on" name="{{row.on.name}}">
+        {{#each row.on.options}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
+      </select>
+      <span class="action-word">{{localize 'SCARMARK.Action.when'}}</span>
+      <select class="action-when" name="{{row.when.name}}">
+        {{#each row.when.options}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
+      </select>
+      <a class="action-delete" data-action="deleteAction" title="{{localize 'SCARMARK.Delete'}}"><i class="fa-solid fa-trash"></i></a>
+    </li>
+    {{/each}}
+    {{#unless panel.rows.length}}
+    <li class="action-empty">{{localize 'SCARMARK.Action.none'}}</li>
+    {{/unless}}
+  </ol>
+</div>

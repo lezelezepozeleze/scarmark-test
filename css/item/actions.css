@@ -1,0 +1,47 @@
+/* The Actions panel (templates/common/actions-panel.hbs). Not item-specific: it styles the panel wherever it is placed. */
+
+.scarmark .actions-panel {
+  margin-top: 14px;
+}
+
+.scarmark .actions-panel .actions-header {
+  display: flex;
+  justify-content: flex-end;
+  border-bottom: var(--sm-line);
+  padding-bottom: 4px;
+  margin-bottom: 4px;
+}
+
+.scarmark .actions-panel .add-action {
+  cursor: pointer;
+}
+
+.scarmark .actions-panel .actions-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.scarmark .actions-panel .action-entry {
+  display: flex;
+  align-items: center;
+  gap: var(--sm-gap-md);
+  padding: 2px 0;
+}
+
+.scarmark .actions-panel .action-entry select {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.scarmark .actions-panel .action-word {
+  font-weight: 700;
+}
+
+.scarmark .actions-panel .action-delete {
+  cursor: pointer;
+}
+
+.scarmark .actions-panel .action-empty {
+  color: var(--sm-text-muted);
+}

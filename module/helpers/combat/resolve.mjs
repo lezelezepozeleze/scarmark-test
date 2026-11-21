@@ -1,0 +1,136 @@
+/** Resolution of a declared attack against the chosen defense (melee and range): the two d100 rolls, the result card, the strikes and the weapon clash. */
+
+import { testBlock } from "../chat.mjs";
+import { rollD100 } from "../dice/shared.mjs";
+import { defenseSituational, findSkillByName, weaponDsl, weaponAsl } from "./lookup.mjs";
+import { resolveOutcome, isBlockResult, dodgeVsMissile, capTarget } from "../../rules/index.mjs";
+import { taLines, tieLines } from "./result-lines.mjs";
+import { L } from "./util.mjs";
+import { postStrike } from "./strike.mjs";
+import { resolveWeaponClash } from "./clash.mjs";
+import { esc } from "../escape.mjs";
+import { BLOCK_CLASH_MIN_IMPACT, DODGE_SKILL, ARMOR_PIERCING_NAMES } from "../../config/index.mjs";
+
+/**
+ * Both sides of the exchange: roll the attacker against the declared ASL, build the defender's target for the chosen defense (capped) and roll it unless the defense is "ignore".
+ *
+ * @param {object} data       the declared attack (data-combat payload)
+ * @param {string} defense    ignore | block | dodge | riposte | counterstrike
+ * @param {object} defParams  the defense dialog's answer ({weaponId, aspect, modifier})
+ * @param {(target: Actor, defWeapon: Item|null, mod: number) => number} defenseTarget  the uncapped defender target for this attack mode
+ * @returns {Promise<object|null>} the actors, rolls, levels and defense weapon; null when an actor is gone
+ */
+async function rollExchange(data, defense, defParams, defenseTarget) {
+  const attacker = fromUuidSync(data.attacker);
+  const target = fromUuidSync(data.target);
+  if (!attacker || !target) return null;
+
+  const { roll: aRoll, level: aLevel } = await rollD100(data.asl);
+
+  const mod = (defParams.modifier || 0) + defenseSituational(target);
+  const defWeapon = defParams.weaponId ? target.items.get(defParams.weaponId) : null;
+  const dTarget = capTarget(defenseTarget(target, defWeapon, mod));
+  let dRoll = null, dLevel = null;
+  if (defense !== "ignore") ({ roll: dRoll, level: dLevel } = await rollD100(dTarget));
+
+  return { attacker, target, aRoll, aLevel, dRoll, dLevel, dTarget, defWeapon };
+}
+
+/** The result card: the attacker's test block, the defender's (or "ignore") and the extra lines (opportunities, ties, "no strike"). */
+function resultCard(data, defense, x, extra) {
+  let content = `<div class="scarmark-card result-card">`;
+  content += testBlock({ title: esc(x.attacker.name), target: data.asl, roll: x.aRoll.total, level: x.aLevel });
+  content += `<hr class="card-sep">`;
+  content += defense === "ignore"
+    ? `<div class="test-block"><div class="card-title">${esc(x.target.name)}</div><div class="card-line">${L("ignore")}</div></div>`
+    : testBlock({ title: `${esc(x.target.name)} (${L(defense)})`, target: x.dTarget, roll: x.dRoll.total, level: x.dLevel });
+  if (extra.length) content += `<hr class="card-sep">${extra.join("")}`;
+  content += `</div>`;
+  return content;
+}
+
+/** Post the result card with both rolls attached. */
+const postResultCard = (x, content) => ChatMessage.create({
+  speaker: ChatMessage.getSpeaker({ actor: x.attacker }),
+  content,
+  rolls: [x.aRoll, x.dRoll].filter(Boolean)
+});
+
+/** A successful block puts the weapons in contact: run the clash (a missile has no weapon, so `attackerWeapon` is null for range). */
+const clashOnBlock = (x, attackerWeapon) => resolveWeaponClash({
+  attacker: x.attacker,
+  attackerWeapon,
+  defender: x.target,
+  defenderWeapon: x.defWeapon,
+  blockLevel: x.dLevel
+});
+
+/**
+ * Resolve a declared missile attack against the defense the target chose: roll both sides, post the result card, strike when the shot lands and clash the blocking shield when a hard hit was blocked.
+ * @param {object} data       the declared attack (data-combat payload of the attack card)
+ * @param {string} defense    ignore | block | dodge
+ * @param {object} [defParams] the defense dialog's answer ({weaponId, modifier})
+ */
+export async function resolveRange(data, defense, defParams = {}) {
+  const x = await rollExchange(data, defense, defParams, (target, defWeapon, mod) => {
+    if (defense === "dodge") return dodgeVsMissile(findSkillByName(target, DODGE_SKILL)?.system.esl ?? 0, data.velocity) + mod; // a High-Velocity Missile halves Dodge
+    if (defense === "block") return (defWeapon ? weaponDsl(target, defWeapon) : 0) + mod;
+    return 0;
+  });
+  if (!x) return;
+  const { attacker, target, aLevel, dLevel } = x;
+
+  const outcome = resolveOutcome(aLevel, defense, dLevel);
+
+  const extra = taLines(outcome, attacker, target);
+  // Critical miss on a ranged attack = the shot goes wild. Flavour-only for now
+  // (a mechanical consequence - a RollTable - is still to be designed).
+  if (aLevel === "cf") extra.push(`<div class="card-line broken">${L("missileGoneWild")}</div>`);
+  if (!outcome.attackerStrikes) extra.push(`<div class="card-line"><i>${L("noStrike")}</i></div>`);
+  await postResultCard(x, resultCard(data, defense, x, extra));
+
+  if (outcome.attackerStrikes) await postStrike(attacker, target, data.aspect, data.impact, outcome.strikeDice, { armorPiercing: data.armorPiercing, skill: data.skill, aim: data.aim, part: data.part });
+
+  // A missile carries no WQ, so only the blocking shield tests: only when the
+  // shot actually landed on it (a Block result) and hit hard enough (BLOCK_CLASH_MIN_IMPACT).
+  if (defense === "block" && isBlockResult(aLevel, dLevel) && (data.impact ?? 0) >= BLOCK_CLASH_MIN_IMPACT) {
+    await clashOnBlock(x, null);
+  }
+}
+
+/**
+ * Resolve a declared melee attack against the defense the target chose: roll both sides, post the result card, strike for whoever won (attacker, or the defender after a Riposte or Counterattack) and clash the weapons on a block.
+ * @param {object} data       the declared attack (data-combat payload of the attack card)
+ * @param {string} defense    ignore | block | dodge | riposte | counterstrike
+ * @param {object} [defParams] the defense dialog's answer ({weaponId, aspect, modifier})
+ */
+export async function resolveMelee(data, defense, defParams = {}) {
+  const x = await rollExchange(data, defense, defParams, (target, defWeapon, mod) => {
+    if (defense === "dodge") return (findSkillByName(target, DODGE_SKILL)?.system.esl ?? 0) + mod;
+    if (defense === "block") return (defWeapon ? weaponDsl(target, defWeapon) : 0) + mod;
+    if (defense === "counterstrike" || defense === "riposte") return (defWeapon ? weaponAsl(target, defWeapon) : 0) + mod;
+    return 0;
+  });
+  if (!x) return;
+  const { attacker, target, aRoll, aLevel, dRoll, dLevel, defWeapon } = x;
+
+  const outcome = resolveOutcome(aLevel, defense, dLevel, aRoll.total, dRoll?.total ?? 0);
+
+  const extra = [...tieLines(outcome), ...taLines(outcome, attacker, target)];
+  if (!outcome.attackerStrikes && !outcome.defenderStrikes) extra.push(`<div class="card-line"><i>${L("noStrike")}</i></div>`);
+  await postResultCard(x, resultCard(data, defense, x, extra));
+
+  const weapon = attacker.items.get(data.weapon);
+  if (outcome.attackerStrikes) {
+    await postStrike(attacker, target, data.aspect, weapon?.system.impact[data.aspect] ?? 0, outcome.strikeDice, { armorPiercing: data.armorPiercing, skill: weapon?.system.associatedSkill, aim: data.aim, part: data.part });
+  }
+  if (outcome.defenderStrikes && defWeapon) {
+    const a = defParams.aspect || "edged";
+    await postStrike(target, attacker, a, defWeapon.system.impact[a] ?? 0, outcome.defStrikeDice, { armorPiercing: ARMOR_PIERCING_NAMES.test(defWeapon.name), skill: defWeapon.system.associatedSkill });
+  }
+
+  // Only a Block result (the blow landed on the guard) puts the weapons in contact.
+  if (defense === "block" && isBlockResult(aLevel, dLevel)) {
+    await clashOnBlock(x, attacker.items.get(data.weapon));
+  }
+}

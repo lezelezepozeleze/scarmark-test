@@ -1,0 +1,95 @@
+{{#> "systems/scarmark-test/templates/item/partials/details-tab.hbs"}}
+
+  <div class="sm-armor-editor">
+
+    <div class="sm-armor-top">
+      {{> "systems/scarmark-test/templates/item/partials/container-select.hbs"}}
+      <div class="field">
+        <label>{{localize 'SCARMARK.Quantity'}}</label>
+        <input type="number" min="0" step="1" name="system.quantity" value="{{system.quantity}}" />
+      </div>
+      <div class="field">
+        <label>{{localize 'SCARMARK.WeightKg'}}</label>
+        <input type="number" min="0" step="any" name="system.weight" value="{{system.weight}}" />
+      </div>
+      <div class="field">
+        <label>{{localize 'SCARMARK.Value'}}</label>
+        <input type="number" min="0" step="any" name="system.value" value="{{system.value}}" />
+      </div>
+    </div>
+
+    <div class="sm-armor-mid">
+      <div class="field">
+        <label>{{localize 'SCARMARK.Armor.quality'}}</label>
+        <input type="number" step="1" value="{{system.quality}}" disabled title="{{localize 'SCARMARK.Armor.qualityDerived'}}" />
+      </div>
+      <div class="field">
+        <label>{{localize 'SCARMARK.Armor.originalQuality'}}</label>
+        <input type="number" step="1" name="system.originalQuality" value="{{system.originalQuality}}" />
+      </div>
+      <div class="field">
+        <label>{{localize 'SCARMARK.Armor.layer'}}</label>
+        <input type="number" min="0" max="{{limits.armorLayerMax}}" step="1" name="system.layer" value="{{system.layer}}" />
+      </div>
+    </div>
+
+    <fieldset class="armor-section">
+      <legend>{{localize 'SCARMARK.Armor.protection'}}</legend>
+      <div class="sm-protection-grid">
+        <div class="field">
+          <label>{{localize 'SCARMARK.Aspect.blunt'}}</label>
+          <input type="number" step="1" name="system.protection.blunt" value="{{system.protection.blunt}}" />
+        </div>
+        <div class="field">
+          <label>{{localize 'SCARMARK.Aspect.edged'}}</label>
+          <input type="number" step="1" name="system.protection.edged" value="{{system.protection.edged}}" />
+        </div>
+        <div class="field">
+          <label>{{localize 'SCARMARK.Aspect.piercing'}}</label>
+          <input type="number" step="1" name="system.protection.piercing" value="{{system.protection.piercing}}" />
+        </div>
+        <div class="field">
+          <label>{{localize 'SCARMARK.Aspect.fire'}}</label>
+          <input type="number" step="1" name="system.protection.fire" value="{{system.protection.fire}}" />
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset class="armor-section">
+      <legend>{{localize 'SCARMARK.Armor.locations'}}</legend>
+      <div class="sm-armor-add-row">
+        <label>{{localize 'SCARMARK.Armor.location'}}</label>
+        <select class="location-picker">
+          <option value="">{{localize 'SCARMARK.Armor.selectLocation'}}</option>
+          {{#each availableCoverage as |opt|}}
+          <option value="{{opt.value}}">{{opt.label}}</option>
+          {{/each}}
+        </select>
+        <button type="button" class="add-location" data-action="addLocation"><i class="fa-solid fa-plus"></i> {{localize 'SCARMARK.Add'}}</button>
+      </div>
+      <div class="sm-armor-locations">
+        {{#each coverageRows as |loc|}}
+        <div class="sm-armor-location-row" data-index="{{loc.index}}">
+          <span class="sm-armor-location-name">{{loc.label}}</span>
+          <label class="sm-armor-condition-label">
+            {{localize 'SCARMARK.Armor.condition'}}
+            <input type="hidden" name="system.coverage.{{loc.index}}.type" value="{{loc.type}}" />
+            <input type="hidden" name="system.coverage.{{loc.index}}.side" value="{{loc.side}}" />
+            <input type="number" step="1" name="system.coverage.{{loc.index}}.condition" value="{{loc.condition}}" />
+          </label>
+          <button type="button" class="sm-armor-remove" data-action="removeLocation" title="{{localize 'SCARMARK.Armor.removeLocation'}}" aria-label="{{localize 'SCARMARK.Armor.removeLocation'}}"><i class="fa-solid fa-trash"></i></button>
+        </div>
+        {{/each}}
+        {{#unless coverageRows.length}}
+        <div class="sm-armor-empty">{{localize 'SCARMARK.Armor.noLocations'}}</div>
+        {{/unless}}
+      </div>
+    </fieldset>
+
+    <div class="field sm-armor-notes">
+      <label>{{localize 'SCARMARK.Trait.note'}}</label>
+      <textarea name="system.notes">{{system.notes}}</textarea>
+    </div>
+
+  </div>
+{{/"systems/scarmark-test/templates/item/partials/details-tab.hbs"}}

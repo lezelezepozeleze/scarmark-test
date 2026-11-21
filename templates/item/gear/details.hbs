@@ -1,0 +1,35 @@
+{{#> "systems/scarmark-test/templates/item/partials/details-tab.hbs"}}
+
+  <div class="in-container-row">
+    {{> "systems/scarmark-test/templates/item/partials/container-select.hbs"}}
+    <div class="checkbox-toggles">
+      <label class="checkbox-label">
+        <input type="checkbox" name="system.consumable" {{#if system.consumable}}checked{{/if}} />
+        {{localize 'SCARMARK.Gear.consumable'}}
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" name="system.usable" {{#if system.usable}}checked{{/if}} />
+        {{localize 'SCARMARK.Gear.usable'}}
+      </label>
+    </div>
+    {{#if system.consumable}}
+    <div class="field toxicity">
+      <label class="plain-label">{{localize 'SCARMARK.Gear.toxicity'}}</label>
+      <input type="number" step="1" min="0" name="system.toxicity" value="{{system.toxicity}}" />
+    </div>
+    {{/if}}
+  </div>
+
+  <div class="gear-row">
+    {{> "systems/scarmark-test/templates/item/partials/quantity-weight-value.hbs"}}
+  </div>
+
+  {{> "systems/scarmark-test/templates/item/partials/notes-field.hbs" cls="note"}}
+
+  {{> "systems/scarmark-test/templates/item/partials/artifact-fields.hbs"}}
+
+  <div class="field description">
+    <h3>{{localize 'SCARMARK.Description'}}</h3>
+    <prose-mirror name="system.description" value="{{system.description}}"></prose-mirror>
+  </div>
+{{/"systems/scarmark-test/templates/item/partials/details-tab.hbs"}}

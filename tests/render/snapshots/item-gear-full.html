@@ -1,0 +1,89 @@
+<!-- part: header -->
+<header class="sheet-header item-header">
+<img class="portrait" src="icons/item.svg" data-action="editImage" alt="Item &lt;name&gt;" />
+<input class="name-input" type="text" name="name" value="Item &lt;name&gt;" placeholder="{SCARMARK.NamePlaceholder}" />
+</header>
+<!-- part: details -->
+<div class="tab details active" data-group="primary" data-tab="details">
+<div class="in-container-row">
+<div class="field in-container">
+<label class="plain-label">{SCARMARK.Container.inContainer}</label>
+<select name="system.container">
+<option value="" >{SCARMARK.Container.onPerson}</option>
+<option value="box" >Backpack</option>
+</select>
+</div>
+<div class="checkbox-toggles">
+<label class="checkbox-label">
+<input type="checkbox" name="system.consumable" checked /> {SCARMARK.Gear.consumable} </label>
+<label class="checkbox-label">
+<input type="checkbox" name="system.usable" checked /> {SCARMARK.Gear.usable} </label>
+</div>
+<div class="field toxicity">
+<label class="plain-label">{SCARMARK.Gear.toxicity}</label>
+<input type="number" step="1" min="0" name="system.toxicity" value="1" />
+</div>
+</div>
+<div class="gear-row">
+<div class="field quantity">
+<label>{SCARMARK.Quantity}</label>
+<input type="number" step="1" name="system.quantity" value="2" />
+</div>
+<div class="field weight">
+<label>{SCARMARK.WeightKg}</label>
+<input type="number" step="0.1" name="system.weight" value="1" />
+</div>
+<div class="field value">
+<label>{SCARMARK.Value}</label>
+<input type="number" step="0.1" name="system.value" value="1" />
+</div>
+</div>
+<div class="field note">
+<label class="plain-label">{SCARMARK.Trait.note}</label>
+<input type="text" name="system.notes" value="&lt;b&gt;text&lt;/b&gt;" />
+</div>
+<div class="field artifact-toggle">
+<label class="checkbox-label">
+<input type="checkbox" name="system.artifact.active" checked /> {SCARMARK.Artifact.label} </label>
+<label class="checkbox-label">
+<input type="checkbox" name="system.rune" checked /> {SCARMARK.Gear.rune} </label>
+<label class="checkbox-label">
+<input type="checkbox" name="system.artifact.attuned" checked /> {SCARMARK.Artifact.attuned} </label>
+<label class="artifact-class"> {SCARMARK.Artifact.class} <input type="number" name="system.artifact.class" value="2" step="1" min="1" max="5" />
+</label>
+</div>
+<div class="field description">
+<h3>{SCARMARK.Description}</h3>
+<prose-mirror name="system.description" value="&lt;b&gt;text&lt;/b&gt;">
+</prose-mirror>
+</div>
+</div>
+<!-- part: effects -->
+<div class="tab effects active" data-group="primary" data-tab="effects">
+<div class="effects-flat">
+<div class="effects-header">
+<span class="col-name">{SCARMARK.Effect.effect}</span>
+<span class="col-duration">{SCARMARK.Effect.duration}</span>
+<span class="col-changes">{SCARMARK.Effect.changes}</span>
+<a class="add-effect" data-action="createEffect">
+<i class="fa-solid fa-plus">
+</i> {SCARMARK.Add} </a>
+</div>
+<ol class="effects-list flat">
+<li class="effect-empty">{SCARMARK.Effect.none}</li>
+</ol>
+</div>
+</div>
+<!-- part: actions -->
+<div class="tab actions active" data-group="primary" data-tab="actions">
+<div class="actions-panel" data-actions-path="system.actions">
+<div class="actions-header">
+<a class="add-action" data-action="createAction">
+<i class="fa-solid fa-plus">
+</i> {SCARMARK.Add} </a>
+</div>
+<ol class="actions-list">
+<li class="action-empty">{SCARMARK.Action.none}</li>
+</ol>
+</div>
+</div>

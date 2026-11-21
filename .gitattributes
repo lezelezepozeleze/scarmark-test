@@ -1,0 +1,17 @@
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+
+# Foundry LevelDB compendium packs — store byte-for-byte, never normalise line endings
+packs/**/*.ldb      binary
+packs/**/*.log      binary
+packs/**/MANIFEST-* binary
+packs/**/CURRENT    binary

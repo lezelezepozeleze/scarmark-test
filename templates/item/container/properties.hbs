@@ -1,0 +1,12 @@
+{{#> "systems/scarmark-test/templates/item/partials/details-tab.hbs"}}
+
+  <div class="gear-row">
+    {{> "systems/scarmark-test/templates/item/partials/quantity-weight-value.hbs"}}
+    <div class="field max-capacity">
+      <label>{{localize 'SCARMARK.Container.maxCapacity'}}</label>
+      <input type="number" step="0.1" min="0" name="system.maxCapacity" value="{{system.maxCapacity}}" />
+    </div>
+  </div>
+
+  {{> "systems/scarmark-test/templates/item/partials/notes-field.hbs" cls="note"}}
+{{/"systems/scarmark-test/templates/item/partials/details-tab.hbs"}}
