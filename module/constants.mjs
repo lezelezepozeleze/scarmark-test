@@ -26,6 +26,8 @@ export const FLAGS = {
   alteration: "alteration",
   /** ActiveEffect: true when no second copy of the same effect may exist on the same item or actor (rules/effect-unique.mjs, foundry/effect-unique.mjs). */
   unique: "unique",
+  /** ActiveEffect: true for an immediate effect: when applied it rewrites the stored values once (the sheet of the character, weapon or armor) and nothing stays in Effects. False or missing: ongoing, the effect is put in Effects. */
+  immediate: "immediate",
   /** ActiveEffect: what the effect is about, "character", "weapon", "armor" or "missile" (config/actions.mjs EFFECT_TARGET_TYPES); the effect sheet remembers the choice. */
   effectType: "effectType",
   /** ActiveEffect on a weapon or missile: true when the effect fires when the weapon wounds (a poisoned blade). The strike card then offers the target a test (rules/poison.mjs). */
@@ -43,7 +45,7 @@ export const FLAGS = {
 };
 
 /** The flags the effect window sets (config of the effect itself). They travel with the effect when it is saved to the library; the flags that tie an effect to an item (ownedByAction, librarySource, improvedBy, expireWorldTime) do not. */
-export const EFFECT_CHOICE_FLAGS = [FLAGS.unique, FLAGS.effectType, FLAGS.alteration, FLAGS.onHit, FLAGS.onHitTest, FLAGS.onHitEffect, FLAGS.charges];
+export const EFFECT_CHOICE_FLAGS = [FLAGS.unique, FLAGS.effectType, FLAGS.immediate, FLAGS.alteration, FLAGS.onHit, FLAGS.onHitTest, FLAGS.onHitEffect, FLAGS.charges];
 
 /** World settings registered in the init hook. */
 export const SETTINGS = {

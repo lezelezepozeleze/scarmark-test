@@ -18,12 +18,7 @@ export const ACTION_KINDS = {
  */
 export const ALTERABLE_ITEM_TYPES = ["armor", "weapon"];
 export const ALTERATION_REPAIR = "repair";
-/** The one-shot operations of the "immediate" box of an effect, per kind of item. Only armor has one: repair. Weapons and missiles have no original durability to go back to, and an upgrade is an ongoing modifier, not a one-shot. */
-export const IMMEDIATE_OPERATIONS = {
-  armor: [ALTERATION_REPAIR]
-};
-
-/** The kinds of thing an effect is about (the first step of the effect picker): the character, or one kind of item. */
+/** The kinds of thing an effect is about (the first choice of the effect sheet): the character, or one kind of item. */
 export const EFFECT_TARGET_CHARACTER = "character";
 export const EFFECT_TARGET_TYPES = [EFFECT_TARGET_CHARACTER, "weapon", "armor"];
 
@@ -67,3 +62,10 @@ export const ACTION_TRIGGERS = {
 export const ON_HIT_DEFAULT_TEST = "skill:Vitality";
 /** The kinds of item whose effects can fire when the item wounds (weapons; missiles later). */
 export const ON_HIT_ITEM_TYPES = ["weapon"];
+
+/** The change types of a character effect (Foundry's own), in the order the effect sheet lists them. "override" is shown as "set". */
+export const CHARACTER_CHANGE_TYPES = ["add", "multiply", "upgrade", "downgrade", "override"];
+/** The change types of an immediate effect and of a weapon or armor effect: only add and set are understood (the keys of ITEM_MOD_DEFAULT_PRIORITY). */
+export const SIMPLE_CHANGE_TYPES = Object.keys(ITEM_MOD_DEFAULT_PRIORITY);
+/** The units of an effect's duration the sheet offers: the world-time ones (config/time.mjs UNIT_SECONDS) and the combat ones. */
+export const DURATION_UNITS = ["seconds", "minutes", "hours", "days", "weeks", "rounds", "turns"];

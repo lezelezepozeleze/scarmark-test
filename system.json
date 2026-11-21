@@ -2,7 +2,7 @@
   "id": "scarmark-test",
   "title": "scarmark-test",
   "description": "Vlastní TTRPG systém pro Foundry VTT. Nízko-magický, mechanicky štíhlý, roleplay-first.",
-  "version": "1.1.8-beta",
+  "version": "1.1.9-beta",
   "compatibility": {
     "minimum": "14",
     "verified": "14.369"
@@ -55,9 +55,9 @@
     "css/item/actions.css",
     "css/item/esoteric.css",
     "css/item/equipment.css",
+    "css/item/effect-sheet.css",
     "css/chat/cards.css",
     "css/dialogs/dialogs.css",
-    "css/foundry/active-effect-config.css",
     "css/foundry/compendium-sidebar.css"
   ],
   "languages": [

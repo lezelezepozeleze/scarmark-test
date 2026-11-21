@@ -33,7 +33,7 @@ test("uniqueConflict: two copies of one alteration entry are the same effect wha
   assert.strictEqual(uniqueConflict([first], effect("Edge honed", { unique: true, improvedBy: "Compendium.x.alt.9" })), null);
 });
 
-test("buildEffectTypes: character, weapon and armor with their operations; the start is the kind of item the effect sits on", () => {
+test("buildEffectTypes: character, weapon and armor; the start is the kind of item the effect sits on", () => {
   const context = { localize: key => key, skillNames: ["Vitality"] };
   const onActor = buildEffectTypes({ parent: { documentName: "Actor", items: [] } }, context);
   assert.deepStrictEqual(onActor.types.map(entry => entry.type), ["character", "weapon", "armor"]);
@@ -41,7 +41,6 @@ test("buildEffectTypes: character, weapon and armor with their operations; the s
   const keys = (type) => onActor.types.find(entry => entry.type === type).groups.flatMap(group => group.options.map(([key]) => key));
   assert.ok(keys("character").includes("system.mods.skill.Vitality"));
   assert.ok(keys("character").every(key => !key.startsWith("system.itemMods.")));
-  assert.deepStrictEqual(onActor.types.map(entry => entry.operations), [[], [], ["repair"]]);
   assert.strictEqual(buildEffectTypes({ parent: { documentName: "Item", type: "armor", parent: { documentName: "Actor", items: [] } } }, context).start, "armor");
   assert.strictEqual(buildEffectTypes({ parent: { documentName: "Item", type: "gear" } }, context).start, "character");
   assert.strictEqual(buildEffectTypes({ transfer: true, parent: { documentName: "Item", type: "weapon" } }, context).start, "character", "an effect that transfers to the owner is about the character");

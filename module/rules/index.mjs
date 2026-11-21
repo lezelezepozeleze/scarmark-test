@@ -9,8 +9,9 @@ export { strikeDice, injuryLevelFor, armorAfterPiercing, armorWears, pickWeighte
 export { capTarget, outcomeLevel, isFailure } from "./d100.mjs";
 export { durationSeconds, isTimedDuration } from "./time.mjs";
 export { repairedArmor, armorRepairProblem } from "./armor-care.mjs";
-export { itemModsOf, weaponEffective, armorEffective, applyItemMods, effectiveStat } from "./item-mods.mjs";
-export { effectFlags } from "./effect-flags.mjs";
+export { itemModsOf, weaponEffective, armorEffective, applyItemMods, changeOf, effectiveStat } from "./item-mods.mjs";
+export { effectFlags, isImmediateEffect } from "./effect-flags.mjs";
+export { rewriteTarget, rewrittenValues, rewrittenItem } from "./rewrite.mjs";
 export { chargesOf, chargesAfterHit, onHitEffects } from "./poison.mjs";
 export { isUniqueEffect, effectIdentity, uniqueConflict } from "./effect-unique.mjs";
 export { actionsFor, isTestAction, isAlterAction, isMessageAction, isEffectAction, parseActionTest, ownedEffectChanges } from "./actions.mjs";

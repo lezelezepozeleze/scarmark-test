@@ -1,11 +1,11 @@
 /** Consuming an item: its Active Effects (plus its toxicity) go onto the actor with their countdown started, and one unit is spent. */
 import { TOXICITY_SKILL, ACTION_TRIGGER_CONSUMED, ACTION_TARGET_SELF } from "../config/index.mjs";
-import { durationSeconds } from "../rules/index.mjs";
-import { stampEffectData, currentWorldTime } from "./effect-library.mjs";
+import { durationSeconds, isImmediateEffect } from "../rules/index.mjs";
+import { stampEffectData, currentWorldTime, applyEffect } from "./effect-library.mjs";
 import { runActions, announce } from "./item-actions.mjs";
 
 /**
- * Add the Vitality penalty of a toxicity to the effects that are about to be applied: it goes into the longest-lasting effect, so it ends with it. An item with no effect gets a permanent one of its own. Returns the same array (mutated) when there is a toxicity, as given otherwise.
+ * Add the Vitality penalty of a toxicity to the effects that are about to be applied: it goes into the longest-lasting ongoing effect, so it ends with it (an immediate effect rewrites values and never carries it). An item with no ongoing effect gets a permanent one of its own, added to the end. Returns the same array (mutated) when the penalty joined an effect, a new one with the extra effect added, or the array as given when there is no toxicity.
  *
  * @param {object[]} effects effect data (stamped copies, safe to change)
  * @param {{toxicity: number, name: string, img: string, uuid: string}} item the consumed item
@@ -13,9 +13,10 @@ import { runActions, announce } from "./item-actions.mjs";
 export function withToxicity(effects, { toxicity, name, img, uuid }) {
   if (!(toxicity > 0)) return effects;
   const change = { key: `system.mods.skill.${TOXICITY_SKILL}`, type: "add", value: -toxicity, priority: 20, phase: "initial" };
-  if (!effects.length) return [{ name, img, disabled: false, transfer: false, origin: uuid, system: { changes: [change] } }];
+  const ongoing = effects.filter(effect => !isImmediateEffect(effect));
+  if (!ongoing.length) return [...effects, { name, img, disabled: false, transfer: false, origin: uuid, system: { changes: [change] } }];
   const seconds = (effect) => durationSeconds(effect.duration) ?? 0;
-  const lasting = effects.reduce((best, e) => (seconds(e) > seconds(best) ? e : best), effects[0]);
+  const lasting = ongoing.reduce((best, e) => (seconds(e) > seconds(best) ? e : best), ongoing[0]);
   lasting.system = { ...(lasting.system ?? {}), changes: [...(lasting.system?.changes ?? []), change] };
   return effects;
 }
@@ -25,12 +26,8 @@ export function withToxicity(effects, { toxicity, name, img, uuid }) {
  */
 function addToxicity(plan, actor, info) {
   const own = plan.filter(entry => entry.on === ACTION_TARGET_SELF).map(entry => entry.data);
-  if (own.length) {
-    withToxicity(own, info);
-    return;
-  }
-  const [effect] = withToxicity([], info);
-  if (effect) plan.push({ on: ACTION_TARGET_SELF, data: effect, targets: [actor], silent: true });
+  const extra = withToxicity(own, info).slice(own.length)[0];
+  if (extra) plan.push({ on: ACTION_TARGET_SELF, data: extra, targets: [actor], silent: true });
 }
 
 /**
@@ -58,13 +55,14 @@ export async function consumeItem(actor, item) {
 
 /** Put the item's own effects (with the toxicity) on the actor. A time or calendar module can make Foundry's duration processing throw (game.time.worldTime unavailable): then they go on without the timed duration so consuming still works. */
 async function applyOwnEffects(actor, buildEffects) {
-  const effects = buildEffects();
-  if (!effects.length) return;
+  const [immediate, ongoing] = [true, false].map(wanted => buildEffects().filter(effect => isImmediateEffect(effect) === wanted));
+  for (const effect of immediate) await applyEffect(actor, effect);
+  if (!ongoing.length) return;
   try {
-    await actor.createEmbeddedDocuments("ActiveEffect", effects);
+    await actor.createEmbeddedDocuments("ActiveEffect", ongoing);
   } catch (durationError) {
     console.warn("Scarmark | effect-duration processing failed; applying without duration", durationError);
-    await actor.createEmbeddedDocuments("ActiveEffect", buildEffects().map(effect => { delete effect.duration; return effect; }));
+    await actor.createEmbeddedDocuments("ActiveEffect", buildEffects().filter(effect => !isImmediateEffect(effect)).map(effect => { delete effect.duration; return effect; }));
     ui.notifications.warn(game.i18n.localize("SCARMARK.Gear.consumedNoDuration"));
   }
 }

@@ -3,3 +3,6 @@ import { FLAGS } from "../constants.mjs";
 
 /** @returns {object} the effect's flags under the system scope ({} when it has none) */
 export const effectFlags = (effect) => effect?.flags?.[FLAGS.scope] ?? {};
+
+/** Whether an effect is immediate: applying it rewrites the stored values once instead of putting it in Effects. */
+export const isImmediateEffect = (effect) => effectFlags(effect)[FLAGS.immediate] === true;

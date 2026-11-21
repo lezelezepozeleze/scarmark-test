@@ -2,7 +2,8 @@
  * The effect library: every standalone Active Effect compendium of this system (alcohol, hangovers, potion sickness, combat poisonings, outnumbered ...). The Add button of the actor Effects tab lists them, and picking one puts a stamped copy on the actor - the same stamp Consume uses.
  */
 import { SYSTEM_ID, FLAGS, EFFECT_CHOICE_FLAGS, PACKS, ALTERATION_PACKS } from "../constants.mjs";
-import { durationSeconds } from "../rules/index.mjs";
+import { durationSeconds, isImmediateEffect } from "../rules/index.mjs";
+import { rewriteDocument } from "./rewrite.mjs";
 
 /**
  * Turn effect data into the copy that goes on an actor: enabled, not transferred, with the countdown started at `now` and the calendar-independent expiry stamp (Foundry cannot compute a time-based duration's "remaining" without game.time.calendar, which Simple Calendar does not set; the sweep in foundry/effect-expiry.mjs reads the stamp). Pure: returns a new object.
@@ -46,10 +47,20 @@ async function createEffect(document, data) {
   return created ?? null;
 }
 
-/** Put a library effect on an actor. Returns the created effect, or null when the uuid no longer resolves. */
+/**
+ * Apply effect data to a character or item the way the effect says: an ongoing effect is put in Effects, an immediate one rewrites the stored values once (helpers/rewrite.mjs) and leaves nothing behind.
+ *
+ * @returns {Promise<boolean>} whether something was applied
+ */
+export async function applyEffect(document, data) {
+  if (isImmediateEffect(data)) return (await rewriteDocument(document, data)) > 0;
+  return Boolean(await createEffect(document, data));
+}
+
+/** Put a library effect on an actor (see applyEffect). Returns whether it was applied, or null when the uuid no longer resolves. */
 export async function applyLibraryEffect(actor, uuid) {
   const effect = await fromUuid(uuid);
-  return effect ? createEffect(actor, stampEffectData(effect.toObject(), { now: currentWorldTime(), origin: effect.uuid })) : null;
+  return effect ? applyEffect(actor, stampEffectData(effect.toObject(), { now: currentWorldTime(), origin: effect.uuid })) : null;
 }
 
 /** Put a plain copy of a library effect on a document (an item keeps it as part of its definition, so the copy is not stamped or started, and does not transfer to the owner). The copy remembers where it came from. Returns the created effect, or null when the uuid no longer resolves. */

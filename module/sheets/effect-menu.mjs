@@ -37,7 +37,7 @@ export async function openEffectMenu(sheet, target) {
     close();
     if ( entry.dataset.blank ) {
       sheet.document.createEmbeddedDocuments("ActiveEffect", [blankEffectData()]);
-    } else if ( !await applyLibraryEffect(sheet.document, entry.dataset.uuid) ) {
+    } else if ( await applyLibraryEffect(sheet.document, entry.dataset.uuid) === null ) {
       ui.notifications.warn(game.i18n.localize("SCARMARK.Effect.libraryMissing"));
     }
   });

@@ -1,9 +1,10 @@
 /** Running the actions of an item: "when <trigger> add <effect> on <target>", "roll <test>", "repair / improve <item>" or "send <message>". Using a usable item sets off its "used" actions, opening the sheet of an item the character carries its "inspected" ones, consuming a consumable its "consumed" ones (helpers/consume.mjs). Using and consuming always say so in the chat (announce). */
 import { ACTION_TARGET_SELECTED_TOKEN, ACTION_TARGET_SELF, ACTION_TRIGGER_USED, ACTION_TRIGGER_INSPECTED, ACTION_TRIGGERS, ALTERABLE_ITEM_TYPES, ALTERATION_REPAIR, ATTRIBUTES, ATTRIBUTE_TEST_MULTIPLIER } from "../config/index.mjs";
 import { FLAGS } from "../constants.mjs";
-import { actionsFor, isEffectAction, isTestAction, isAlterAction, isMessageAction, parseActionTest, ownedEffectChanges, armorRepairProblem, repairedArmor, isTimedDuration, capTarget } from "../rules/index.mjs";
+import { actionsFor, isEffectAction, isTestAction, isAlterAction, isMessageAction, parseActionTest, ownedEffectChanges, armorRepairProblem, repairedArmor, isTimedDuration, isImmediateEffect, capTarget } from "../rules/index.mjs";
 import { esc } from "./escape.mjs";
-import { stampEffectData, currentWorldTime, copyLibraryEffect } from "./effect-library.mjs";
+import { stampEffectData, currentWorldTime, copyLibraryEffect, applyEffect } from "./effect-library.mjs";
+import { rewriteDocument } from "./rewrite.mjs";
 import { rollD100Test } from "./dice/shared.mjs";
 
 /** The actor that carries the item (null for a loose item). */
@@ -74,8 +75,7 @@ async function applyPlan(plan) {
         warn("SCARMARK.Action.noPermission", { actor: target.name });
         continue;
       }
-      await target.createEmbeddedDocuments("ActiveEffect", [foundry.utils.deepClone(entry.data)]);
-      done.push(target);
+      if (await applyEffect(target, foundry.utils.deepClone(entry.data))) done.push(target);
     }
     applied += done.length;
     const card = ACTION_TRIGGERS[entry.trigger]?.card;
@@ -129,6 +129,9 @@ async function repairItem(target) {
   return true;
 }
 
+/** Apply an immediate alteration to an item: its changes rewrite the stored values of the item once (nothing is put on the item). Returns whether anything was written. */
+const rewriteItem = async (target, entry) => (await rewriteDocument(target, entry.toObject())) > 0;
+
 /** Put an alteration (an effect of an alteration compendium) on an item as a modifier, timed if the effect has a duration. The copy remembers its compendium entry, and one entry cannot alter an item twice. Returns whether it was put on. */
 async function alterItem(item, target, entry) {
   if (target.effects.some(existing => existing.getFlag(FLAGS.scope, FLAGS.improvedBy) === entry.uuid)) {
@@ -158,7 +161,8 @@ function alterItems(item, trigger) {
       return false;
     }
     const repairing = entry.getFlag(FLAGS.scope, FLAGS.alteration) === ALTERATION_REPAIR;
-    if (!(repairing ? await repairItem(target) : await alterItem(item, target, entry))) return false;
+    const apply = repairing ? repairItem : (isImmediateEffect(entry) ? rewriteItem : (t, e) => alterItem(item, t, e));
+    if (!(await apply(target, entry))) return false;
     await say(owner, repairing ? "SCARMARK.Action.cardRepair" : "SCARMARK.Action.cardAlter", { actor: owner.name, item: item.name, target: target.name, effect: entry.name });
     return true;
   });

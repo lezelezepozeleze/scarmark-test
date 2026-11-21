@@ -1,7 +1,7 @@
 /**
  * View models of Active Effects for the sheets: the Effects tab groups and the types and stats of the effect picker. Pure: no Foundry globals; the text comes through `localize`.
  */
-import { ATTRIBUTES, EFFECT_PICKER_GROUPS, ITEM_MOD_STATS, ITEM_MOD_KEY_PREFIX, EFFECT_TARGET_TYPES, EFFECT_TARGET_CHARACTER, IMMEDIATE_OPERATIONS } from "../config/index.mjs";
+import { ATTRIBUTES, EFFECT_PICKER_GROUPS, ITEM_MOD_STATS, ITEM_MOD_KEY_PREFIX, EFFECT_TARGET_TYPES, EFFECT_TARGET_CHARACTER } from "../config/index.mjs";
 
 /**
  * Split a Document's effects into Temporary / Passive / Inactive groups.
@@ -66,11 +66,11 @@ function itemStatGroup(type, t) {
 }
 
 /**
- * The first step of the effect picker: what the effect is about (the character, a weapon or an armor piece) and, per choice, the stats it can change and the one-shot operations it can do. The type to start on is the kind of item the effect sits on (unless it transfers to the owner), else the character.
+ * The first step of the effect picker: what the effect is about (the character, a weapon or an armor piece) and, per choice, the stats it can change. The type to start on is the kind of item the effect sits on (unless it transfers to the owner), else the character.
  *
  * @param {object} effectDoc the ActiveEffect being edited
  * @param {{skillNames?: string[], localize: (key: string) => string}} context the canonical skill names (from the Skills compendium) and the translator
- * @returns {{start: string, types: {type: string, label: string, groups: object[], operations: string[]}[]}}
+ * @returns {{start: string, types: {type: string, label: string, groups: {label: string, options: [string, string][]}[]}[]}}
  */
 export function buildEffectTypes(effectDoc, context) {
   const t = context.localize;
@@ -81,8 +81,7 @@ export function buildEffectTypes(effectDoc, context) {
   const types = EFFECT_TARGET_TYPES.map(type => ({
     type,
     label: t(`SCARMARK.EffectPicker.type.${type}`),
-    groups: type === EFFECT_TARGET_CHARACTER ? character : [itemStatGroup(type, t)],
-    operations: IMMEDIATE_OPERATIONS[type] ?? []
+    groups: type === EFFECT_TARGET_CHARACTER ? character : [itemStatGroup(type, t)]
   }));
   return { start, types };
 }

@@ -608,21 +608,65 @@
       "libraryNotSaved": "{name} could not be submitted to the effect library: only the GM can write to the Effects compendium.",
       "librarySubmitted": "{name} was submitted to the effect library.",
       "submitToLibrary": "Submit to the library",
-      "save": "Save",
       "submitHint": "Saves the changes, then adds this effect to the effect library as a new entry, or updates its library entry.",
-      "saveHint": "Saves the changes made in this window to this effect.",
       "none": "None",
       "toggle": "Toggle",
       "delete": "Delete",
       "deleteFromItem": "<p><b>{effect}</b> comes from the item <b>{item}</b>. Deleting it removes it from that item on this actor (the original in the compendium is not touched).</p><p>Delete it?</p>",
       "effect": "Effect",
-      "duration": "Duration",
+      "duration": "Lasts",
       "changes": "Changes",
       "category": {
         "temporary": "Temporary",
         "passive": "Passive",
         "inactive": "Inactive"
-      }
+      },
+      "otherKey": "Other",
+      "namePlaceholder": "Effect name",
+      "changeIcon": "Change the icon",
+      "disabled": "Switched off",
+      "about": "What it is",
+      "aboutLabel": "This effect is about",
+      "kindLabel": "It is",
+      "kindOngoing": "Ongoing - stays in Effects",
+      "kindImmediate": "Immediate - rewrites the value in the sheet",
+      "hintOngoing": "The effect is put in Effects and changes the value for as long as it lasts.",
+      "hintImmediate": "Applied once: it rewrites the value in the sheet (add or set) and leaves nothing in Effects.",
+      "colStat": "Stat",
+      "colDo": "Do",
+      "colValue": "Value",
+      "colPriority": "Priority",
+      "pickStat": "- pick a stat -",
+      "addChange": "Add a change",
+      "deleteChange": "Remove this change",
+      "changeType": {
+        "add": "add",
+        "multiply": "multiply",
+        "upgrade": "at least",
+        "downgrade": "at most",
+        "override": "set"
+      },
+      "lasts": "Lasts and limits",
+      "noLimit": "no limit",
+      "unit": {
+        "seconds": "seconds",
+        "minutes": "minutes",
+        "hours": "hours",
+        "days": "days",
+        "weeks": "weeks",
+        "rounds": "rounds",
+        "turns": "turns"
+      },
+      "unique": "Only one at a time (no second copy on the same item or actor)",
+      "transfer": "Passes to whoever carries the item",
+      "repairBox": "Repair",
+      "repair": "Repair instead: every location goes back to its original durability (the changes are ignored)",
+      "onHitBox": "Poison on the blade",
+      "onHit": "When this weapon wounds, the target is tested",
+      "onHitTest": "Test",
+      "onHitEffect": "If it fails, the target gets",
+      "charges": "Hits it lasts",
+      "cannotRewrite": "{key} is not a value stored in the sheet, so an immediate effect cannot rewrite it."
     },
     "Attribute": {
       "str": "Strength",
@@ -723,7 +767,8 @@
       "injury": "Scarmark Injury",
       "invocation": "Scarmark Invocation",
       "spell": "Scarmark Spell",
-      "psionic": "Scarmark Psionic"
+      "psionic": "Scarmark Psionic",
+      "effect": "Scarmark Effect Sheet"
     },
     "Maneuvers": {
       "grapple": {
@@ -817,19 +862,6 @@
         "piercing": "Piercing",
         "fire": "Fire"
       },
-      "about": "This effect is about",
-      "changeSet": "set",
-      "kind": "Kind",
-      "kindOngoing": "Ongoing - lasts until removed (or its time runs out)",
-      "kindImmediate": "Immediate - happens once, when an alter action applies it (armor repair)",
-      "operation": "Does",
-      "opRepair": "Repair (every location back to full)",
-      "onHit": "When this weapon wounds, the target is tested",
-      "onHitTest": "Test",
-      "onHitEffect": "If it fails, the target gets",
-      "charges": "Hits it lasts",
-      "chargesNone": "no limit",
-      "unique": "Only one at a time (no second copy on the same item or actor)",
       "item": {
         "quality": "Durability",
         "specialization": "Specialization",
@@ -860,8 +892,7 @@
       "skillsPsionic": "Psionic talents",
       "injury": "Wound Level / WL (lowers Condition)",
       "endurance": "Endurance (and max Condition)",
-      "fatigue": "Fatigue",
-      "pickKey": "- pick a key -"
+      "fatigue": "Fatigue"
     },
     "Tooltip": {
       "type": "Type",

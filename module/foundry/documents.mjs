@@ -22,6 +22,7 @@ import ScarmarkCreatureSheet from "../sheets/actor-creature-sheet.mjs";
 import ScarmarkNpcSheet from "../sheets/actor-npc-sheet.mjs";
 import ScarmarkAnimalSheet from "../sheets/actor-animal-sheet.mjs";
 import ScarmarkContainerActorSheet from "../sheets/actor-container-sheet.mjs";
+import ScarmarkEffectSheet from "../sheets/effect-sheet.mjs";
 import ScarmarkTraitSheet from "../sheets/item-trait-sheet.mjs";
 import ScarmarkGearSheet from "../sheets/item-gear-sheet.mjs";
 import ScarmarkSkillSheet from "../sheets/item-skill-sheet.mjs";
@@ -73,4 +74,6 @@ export function registerDocuments() {
   Items.unregisterSheet("core", foundry.appv1.sheets.ItemSheet);
   register(Actors, CONFIG.Actor.dataModels, ACTORS);
   register(Items, CONFIG.Item.dataModels, ITEMS);
+  // Active Effects open in the system's own sheet (sheets/effect-sheet.mjs) instead of Foundry's.
+  foundry.applications.apps.DocumentSheetConfig.registerSheet(foundry.documents.ActiveEffect, SYSTEM_ID, ScarmarkEffectSheet, { makeDefault: true, label: "SCARMARK.SheetLabels.effect" });
 }

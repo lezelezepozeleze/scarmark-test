@@ -23,10 +23,10 @@ Registered in `system.json` → `styles`. **The order of that list is the load o
 | 16a | `item/actions.css` | Actions list on items. |
 | 17 | `item/esoteric.css` | Spell and Invocation sheets. |
 | 18 | `item/equipment.css` | Gear, Weapon, Armor, Armor Location, Missile, Container, Injury sheets. |
+| 18a | `item/effect-sheet.css` | The effect sheet (header, boxes, grid of the change rows). |
 | 19 | `chat/cards.css` | Chat cards. |
 | 20 | `dialogs/dialogs.css` | Combat helper (`.smch`) and the Tactics window (`.sm-tactics`), both outside `.scarmark`, so they use their own `--smch-*` variables instead of the `--sm-*` tokens. |
-| 21 | `foundry/active-effect-config.css` | Key picker in the Active Effect config (outside `.scarmark`, so no `--sm-*` tokens). |
-| 22 | `foundry/compendium-sidebar.css` | Compendium sidebar rows (outside `.scarmark`, uses core variables). |
+| 21 | `foundry/compendium-sidebar.css` | Compendium sidebar rows (outside `.scarmark`, uses core variables). |
 
 Exceptions: the `--smch-*` variables (combat helper colours in `dialogs/dialogs.css`) are defined on `.smch`, outside `.scarmark`, on purpose. `--sm-cols` (inventory row columns) is set per section in `actor/gear.css`, not in `tokens.css`.
 

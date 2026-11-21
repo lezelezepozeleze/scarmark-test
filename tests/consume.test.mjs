@@ -33,3 +33,16 @@ test("toxicity: effects without a duration count as 0 seconds, so a timed one wi
   assert.strictEqual(permanent.system, undefined);
   assert.strictEqual(timed.system.changes.length, 1);
 });
+
+test("toxicity: an immediate effect never carries the penalty, an ongoing one does, and with none the penalty gets an effect of its own", () => {
+  const immediate = { name: "Tonic", flags: { "scarmark-test": { immediate: true } }, duration: { value: 5, units: "hours" } };
+  const ongoing = { name: "Buzz", duration: { value: 1, units: "hours" } };
+  const both = withToxicity([immediate, ongoing], item);
+  assert.strictEqual(immediate.system, undefined);
+  assert.strictEqual(ongoing.system.changes.length, 1);
+  assert.strictEqual(both.length, 2);
+  const only = withToxicity([immediate], item);
+  assert.strictEqual(only.length, 2);
+  assert.strictEqual(immediate.system, undefined);
+  assert.strictEqual(only[1].name, "Beer (5)");
+});

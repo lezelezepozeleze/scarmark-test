@@ -2,6 +2,13 @@
 
 All notable changes to the Scarmark system.
 
+## 1.1.9-beta - 2026-11-21
+
+- New effect sheet, replacing Foundry's own window for every Active Effect. One form: the name and icon; "This effect is about" (Character, Weapon, Armor) and "It is" (Ongoing or Immediate); the changes as rows of stat, do, value and priority; how long it lasts; only one at a time; and for a weapon the poison it carries. Picking a type or kind redraws the form. A weapon or armor row now has the priority field again (an empty one shows the default of its type as a hint). Character rows offer add, multiply, at least, at most and set; weapon, armor and immediate rows offer add and set.
+- Ongoing and immediate mean the same for everything. Ongoing: the effect is put in Effects and changes the value for as long as it lasts. Immediate: applying it rewrites the stored value in the sheet once (add or set, in priority order, never below 0) and nothing stays in Effects. A character is rewritten on attribute bases, fatigue and skill levels; a weapon or armor piece on the stats of its modifiers (armor durability on every location, weapon durability up to 16). The Add menu, actions that add an effect, alter actions and Consume all apply an effect this way; an immediate effect never carries the toxicity of a consumable.
+- Armor repair is a checkbox of an immediate armor effect: every location goes back to its original durability.
+- The old key picker and the Save button of the Foundry window are gone (the form saves on every change).
+
 ## 1.1.8-beta - 2026-11-21
 
 - Effect window: the first line is "This effect is about" (Character, Weapon, Armor) and the stat roll-downs of the change rows list what fits it. A character row is Foundry's own (stat, type, value, priority). A weapon or armor row is a stat, add or set, and a value: the other change types and the priority are hidden, and a set replaces the value (it beats an add unless you give the add a later priority). Weapon stats: durability, attack, defense, specialization, impact (blunt, edge, piercing, fire). Armor stats: durability (the condition of every location at once) and protection (blunt, edge, piercing, fire). Combat, the clash durability test and the combat tab read the result; the stored values never change. Missiles are out for now (no missile modifiers, no poison on missiles).

@@ -1,7 +1,7 @@
 /** Modifiers on the stats of a weapon or armor piece: an Active Effect on the item (not transferring to the owner) with changes on ITEM_MOD_KEY_PREFIX keys adds to a stat or sets it. The stored fields are never touched; the item exposes the result as system.effective and combat reads that. Pure. */
 import { ITEM_MOD_KEY_PREFIX, ITEM_MOD_DEFAULT_PRIORITY, DAMAGE_ASPECTS } from "../config/index.mjs";
 
-/** The kind of a change, "add" or "override" (shown as "set"); null for any other, which items ignore. A V14 `type`, or the older numeric `mode` (2 add, 5 override); neither stated means add. */
+/** The kind of a change, "add" or "override" (shown as "set"); null for any other, which items and rewrites ignore. A V14 `type`, or the older numeric `mode` (2 add, 5 override); neither stated means add. */
 function changeType(change) {
   if (change.type) return change.type in ITEM_MOD_DEFAULT_PRIORITY ? change.type : null;
   if (change.mode === undefined || change.mode === 2) return "add";
@@ -10,6 +10,17 @@ function changeType(change) {
 
 /** The priority of a change: the one it states, else the default of its type (add before set, so a set wins). */
 const priorityOf = (change, type) => (change.priority === null || change.priority === undefined || change.priority === "" || !Number.isFinite(Number(change.priority)) ? ITEM_MOD_DEFAULT_PRIORITY[type] : Number(change.priority));
+
+/**
+ * A change as the rules read it: { key, type: "add"|"override", value: number, priority }, or null when it is another kind of change or has no number.
+ *
+ * @param {{key?: string, type?: string, mode?: number, value?: *, priority?: *}} change one change of an effect
+ */
+export function changeOf(change) {
+  const type = changeType(change);
+  const value = Number(change.value);
+  return type && Number.isFinite(value) && change.value !== "" && change.value !== null ? { key: String(change.key ?? ""), type, value, priority: priorityOf(change, type) } : null;
+}
 
 /**
  * The item-stat changes of the effects of an item, per stat.
@@ -22,10 +33,8 @@ export function itemModsOf(effects) {
   for (const effect of effects ?? []) {
     if (effect.disabled || effect.transfer) continue;
     for (const change of effect.system?.changes ?? effect.changes ?? []) {
-      const type = String(change.key ?? "").startsWith(ITEM_MOD_KEY_PREFIX) ? changeType(change) : null;
-      const value = Number(change.value);
-      if (!type || !Number.isFinite(value)) continue;
-      (mods[change.key.slice(ITEM_MOD_KEY_PREFIX.length)] ??= []).push({ type, value, priority: priorityOf(change, type) });
+      const read = String(change.key ?? "").startsWith(ITEM_MOD_KEY_PREFIX) ? changeOf(change) : null;
+      if (read) (mods[read.key.slice(ITEM_MOD_KEY_PREFIX.length)] ??= []).push({ type: read.type, value: read.value, priority: read.priority });
     }
   }
   return mods;
